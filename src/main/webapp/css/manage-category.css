@@ -76,6 +76,11 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     margin-top: 5px;
 }
 
+.pricing-info {
+    color: #2196f3;
+    font-weight: 500;
+}
+
 /* Button Styles */
 .btn {
     padding: 10px 15px;
@@ -371,4 +376,37 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
 /* Text styling */
 .text-center {
     text-align: center;
+}
+
+/* Reference Pricing Table */
+.reference-pricing {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.reference-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.reference-table th, 
+.reference-table td {
+    padding: 10px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.reference-table th {
+    background-color: #f1f1f1;
+    font-weight: 500;
+}
+
+.reference-table tr:last-child td {
+    border-bottom: none;
+}
+
+.reference-table tr:hover td {
+    background-color: #f0f7ff;
 }

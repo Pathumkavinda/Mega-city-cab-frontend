@@ -14,7 +14,156 @@
 const API_BASE_URL = "http://localhost:8080/mccAPI/api";
 const USERS_ENDPOINT = `${API_BASE_URL}/users`;
 const DRIVERS_ENDPOINT = `${API_BASE_URL}/drivers`;
+const CARS_ENDPOINT = `${API_BASE_URL}/cars`;
 
+/**
+ * Load available cars for driver assignment
+ * @returns {Promise<void>}
+ */
+async function loadAvailableCars() {
+    try {
+        // Get the car select element
+        const carSelect = document.getElementById('carSelect');
+        if (!carSelect) return;
+        
+        // Show loading option
+        carSelect.innerHTML = '<option value="">Loading cars...</option>';
+        
+        // Fetch available cars from the API
+        const response = await fetch(`${API_BASE_URL}/cars?available=true`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch cars');
+        }
+        
+        const cars = await response.json();
+        
+        // Reset the select
+        carSelect.innerHTML = '<option value="">Select a car</option>';
+        
+        // Add cars to select
+        cars.forEach(car => {
+            const option = document.createElement('option');
+            option.value = car.id;
+            option.textContent = `${car.number_plate} - ${car.category_name}`;
+            carSelect.appendChild(option);
+        });
+        
+        // Show message if no cars available
+        if (cars.length === 0) {
+            carSelect.innerHTML = '<option value="">No available cars found</option>';
+        }
+    } catch (error) {
+        console.error('Error loading cars:', error);
+        
+        // Show error in select
+        const carSelect = document.getElementById('carSelect');
+        if (carSelect) {
+            carSelect.innerHTML = '<option value="">Error loading cars</option>';
+        }
+    }
+}
+
+/**
+ * Assign car to driver
+ * @param {number} driverId - Driver ID
+ * @param {number} carId - Car ID
+ * @returns {Promise<boolean>} - Success status
+ */
+async function assignCarToDriver(driverId, carId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/cars/${carId}/assign`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ driver_id: driverId }),
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to assign car');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error assigning car:', error);
+        if (typeof showAlert === 'function') {
+            showAlert('Failed to assign car: ' + error.message, 'error');
+        }
+        return false;
+    }
+}
+
+// Add DOM event listeners for the car assignment modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Only run this if we're on the ManageDrivers.jsp page
+    if (window.location.href.includes('ManageDrivers.jsp')) {
+        // Handle open car assignment modal
+        const assignCarBtns = document.querySelectorAll('.assign-car-btn');
+        assignCarBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const driverId = this.getAttribute('data-driver-id');
+                const driverName = this.getAttribute('data-driver-name');
+                
+                // Set driver info in modal
+                document.getElementById('assignDriverName').textContent = driverName;
+                
+                // Store driver ID for assignment
+                const confirmBtn = document.getElementById('confirmAssignBtn');
+                confirmBtn.setAttribute('data-driver-id', driverId);
+                
+                // Load available cars
+                loadAvailableCars();
+                
+                // Show modal
+                document.getElementById('assignCarModal').classList.add('show');
+            });
+        });
+        
+        // Handle car assignment confirmation
+        const confirmAssignBtn = document.getElementById('confirmAssignBtn');
+        if (confirmAssignBtn) {
+            confirmAssignBtn.addEventListener('click', async function() {
+                const driverId = this.getAttribute('data-driver-id');
+                const carId = document.getElementById('carSelect').value;
+                
+                if (!carId) {
+                    if (typeof showAlert === 'function') {
+                        showAlert('Please select a car to assign', 'warning');
+                    }
+                    return;
+                }
+                
+                const success = await assignCarToDriver(driverId, parseInt(carId));
+                
+                if (success) {
+                    // Close modal
+                    document.getElementById('assignCarModal').classList.remove('show');
+                    
+                    // Show success message
+                    if (typeof showAlert === 'function') {
+                        showAlert('Car assigned successfully', 'success');
+                    }
+                    
+                    // Refresh driver list
+                    loadDrivers();
+                }
+            });
+        }
+        
+        // Handle modal close buttons
+        const closeModalBtns = document.querySelectorAll('.close-modal');
+        closeModalBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Find parent modal
+                const modal = this.closest('.modal');
+                if (modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+    }
+});
 /**
  * Check if a user is already registered as a driver
  * @param {number} userId - User ID to check
@@ -176,5 +325,136 @@ document.addEventListener('DOMContentLoaded', function() {
     // Only run this if we're on the ManageDrivers.jsp page
     if (window.location.href.includes('ManageDrivers.jsp')) {
         initDriverFormWithUserData();
+    }
+});
+/**
+ * Load all users and populate the user selection dropdown
+ * @returns {Promise<void>}
+ */
+async function loadUsersForDriverSelection() {
+    try {
+        // Show loading indicator
+        const userSelect = document.getElementById('userId');
+        if (!userSelect) return;
+        
+        userSelect.innerHTML = '<option value="">Loading users...</option>';
+        
+        // Fetch all users from the API
+        const response = await fetch(`${USERS_ENDPOINT}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+        
+        const users = await response.json();
+        
+        // Reset the select
+        userSelect.innerHTML = '<option value="">Select User</option>';
+        
+        // Process each user
+        const processUserPromises = users.map(async (user) => {
+            try {
+                // Check if user is already a driver
+                const driverResponse = await fetch(`${DRIVERS_ENDPOINT}/user/${user.id}`);
+                const isDriver = driverResponse.ok;
+                
+                // Skip users who are already drivers
+                if (isDriver) return;
+                
+                // Skip users who don't have 'user' role
+                if (user.uRole !== 'user') return;
+                
+                // Create and append the option
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.fullName} (${user.uEmail})`;
+                userSelect.appendChild(option);
+            } catch (error) {
+                console.error(`Error processing user ${user.id}:`, error);
+            }
+        });
+        
+        // Wait for all user checks to complete
+        await Promise.all(processUserPromises);
+        
+        // If no users available, show message
+        if (userSelect.options.length <= 1) {
+            userSelect.innerHTML = '<option value="">No available users found</option>';
+        }
+        
+        // Show success message
+        if (typeof showAlert === 'function') {
+            showAlert('User list refreshed successfully', 'success');
+        }
+        
+    } catch (error) {
+        console.error('Error loading users:', error);
+        
+        // Show error message in the select
+        const userSelect = document.getElementById('userId');
+        if (userSelect) {
+            userSelect.innerHTML = '<option value="">Error loading users</option>';
+        }
+        
+        // Show error alert
+        if (typeof showAlert === 'function') {
+            showAlert('Failed to load users. Please try again.', 'error');
+        }
+    }
+}
+
+// Attach event to refresh button
+document.addEventListener('DOMContentLoaded', function() {
+    // Only run this if we're on the ManageDrivers.jsp page
+    if (window.location.href.includes('ManageDrivers.jsp')) {
+        // Initial load of users
+        loadUsersForDriverSelection();
+        
+        // Attach event to refresh button
+        const refreshBtn = document.getElementById('refreshUsersBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                loadUsersForDriverSelection();
+            });
+        }
+        
+        // Handle user selection change
+        const userSelect = document.getElementById('userId');
+        if (userSelect) {
+            userSelect.addEventListener('change', async function() {
+                const selectedUserId = this.value;
+                const userInfoContainer = document.getElementById('selectedUserInfo');
+                
+                if (!selectedUserId) {
+                    if (userInfoContainer) {
+                        userInfoContainer.style.display = 'none';
+                    }
+                    return;
+                }
+                
+                try {
+                    const userData = await getUserById(parseInt(selectedUserId));
+                    if (userData) {
+                        // Display user info
+                        if (document.getElementById('userFullName')) {
+                            document.getElementById('userFullName').textContent = userData.fullName;
+                        }
+                        
+                        if (document.getElementById('userEmail')) {
+                            document.getElementById('userEmail').textContent = userData.uEmail;
+                        }
+                        
+                        if (userInfoContainer) {
+                            userInfoContainer.style.display = 'block';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error getting user details:', error);
+                    if (typeof showAlert === 'function') {
+                        showAlert('Error loading user details', 'error');
+                    }
+                }
+            });
+        }
     }
 });

@@ -103,6 +103,7 @@
                             <option value="Luxury">Luxury</option>
                             <option value="Van">Van</option>
                         </select>
+                        <span class="info-text">Select a category to see available cars</span>
                     </div>
                     
                     <div class="form-group">
@@ -111,6 +112,7 @@
                             <option value="">Select Car</option>
                             <!-- Car options will be loaded dynamically -->
                         </select>
+                        <span class="info-text">Showing only cars matching selected category that are not in any category yet</span>
                     </div>
                 </div>
                 
@@ -132,13 +134,15 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="pricePerKm">Price Per Kilometer ($)</label>
+                        <label for="pricePerKm">Price Per Kilometer (Rs.)</label>
                         <input type="number" id="pricePerKm" name="price_per_km" min="0.01" step="0.01" required>
+                        <span class="info-text pricing-info">Standard rates will apply based on category</span>
                     </div>
                     
                     <div class="form-group">
-                        <label for="waitingCharge">Waiting Charge Per Hour ($)</label>
+                        <label for="waitingCharge">Waiting Charge Per Hour (Rs.)</label>
                         <input type="number" id="waitingCharge" name="waiting_charge" min="0.01" step="0.01" required>
+                        <span class="info-text pricing-info">Standard rates will apply based on category</span>
                     </div>
                 </div>
                 

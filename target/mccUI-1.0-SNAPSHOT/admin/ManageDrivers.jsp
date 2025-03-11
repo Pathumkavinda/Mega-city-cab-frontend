@@ -1,9 +1,8 @@
 <%-- 
     Document   : ManageDrivers
-    Created on : Mar 8, 2025, 2:34:12 PM
-    Author     : Admin
+    Created on : Mar 11, 2025
+    Author     : Mega City Cab Admin
 --%>
-
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
@@ -98,61 +97,37 @@
             </div>
             
             <form id="driverForm" class="driver-form">
-                <input type="hidden" id="driverId" name="id" value="0">
+                <input type="hidden" id="driverId" name="driver_id" value="0">
                 
-                <!-- User Selection or Display -->
-                <div class="form-group full-width user-selection-group">
-                    <label for="userId">User</label>
-                    <div class="user-select-container">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userId">User</label>
                         <select id="userId" name="user_id" required>
                             <option value="">Select User</option>
-                            <!-- User options will be loaded dynamically -->
+                            <!-- Users will be loaded dynamically -->
                         </select>
-                        <button type="button" class="btn btn-secondary" id="refreshUsersBtn">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
                     </div>
-                    <div class="selected-user-info" id="selectedUserInfo" style="display:none;">
-                        <div class="user-info-field">
-                            <span class="field-label">Name:</span>
-                            <span class="field-value" id="userFullName"></span>
-                        </div>
-                        <div class="user-info-field">
-                            <span class="field-label">Email:</span>
-                            <span class="field-value" id="userEmail"></span>
-                        </div>
+                    
+                    <div class="form-group">
+                        <label for="carId">Car</label>
+                        <select id="carId" name="car_id" required>
+                            <option value="">Select Car</option>
+                            <!-- Cars will be loaded dynamically -->
+                        </select>
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="licenseNumber">License Number</label>
-                        <input type="text" id="licenseNumber" name="license_number" required placeholder="e.g., DL12345678">
-                        <span class="help-text">Format: Two letters followed by at least 8 digits</span>
+                        <input type="text" id="licenseNumber" name="license_number" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="licenseExpiry">License Expiry Date</label>
-                        <input type="date" id="licenseExpiry" name="license_expiry" required>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="experienceYears">Years of Experience</label>
-                        <input type="number" id="experienceYears" name="experience_years" min="0" max="50" value="0">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="rating">Initial Rating</label>
-                        <input type="number" id="rating" name="rating" min="0" max="5" step="0.1" value="3.0">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="isAvailable">Availability Status</label>
-                        <select id="isAvailable" name="is_available" required>
-                            <option value="true">Available</option>
-                            <option value="false">Not Available</option>
+                        <label for="activeStatus">Status</label>
+                        <select id="activeStatus" name="active_status" required>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
                         </select>
                     </div>
                 </div>
@@ -177,13 +152,6 @@
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchDrivers" placeholder="Search drivers...">
                     </div>
-                    <div class="filter-options">
-                        <select id="filterAvailability" onchange="filterDrivers()">
-                            <option value="all">All Status</option>
-                            <option value="true">Available</option>
-                            <option value="false">Not Available</option>
-                        </select>
-                    </div>
                     <button class="btn btn-primary" id="addNewBtn">
                         <i class="fas fa-plus"></i> Add New Driver
                     </button>
@@ -195,12 +163,9 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Driver Name</th>
-                            <th>License No.</th>
-                            <th>Expiry</th>
+                            <th>User</th>
                             <th>Car</th>
-                            <th>Experience</th>
-                            <th>Rating</th>
+                            <th>License Number</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -208,7 +173,7 @@
                     <tbody>
                         <!-- Driver data will be loaded dynamically via JavaScript -->
                         <tr class="loading-row">
-                            <td colspan="9" class="loading-indicator">
+                            <td colspan="6" class="loading-indicator">
                                 <i class="fas fa-spinner fa-spin"></i> Loading drivers...
                             </td>
                         </tr>
@@ -240,32 +205,26 @@
         </div>
     </div>
 
-    <!-- Assign Car Modal -->
-    <div class="modal" id="assignCarModal">
+    <!-- Status Toggle Confirmation Modal -->
+    <div class="modal" id="statusModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Assign Car to Driver</h3>
+                <h3>Confirm Status Change</h3>
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Select a car to assign to <strong><span id="assignDriverName"></span></strong>:</p>
-                <div class="form-group">
-                    <label for="carSelect">Available Cars</label>
-                    <select id="carSelect" class="full-width">
-                        <option value="">Select a car</option>
-                        <!-- Cars will be loaded dynamically -->
-                    </select>
-                </div>
+                <p>Are you sure you want to change the status of this driver?</p>
+                <p><strong>Driver:</strong> <span id="statusDriverName"></span></p>
+                <p><strong>New Status:</strong> <span id="newStatus"></span></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary close-modal">Cancel</button>
-                <button class="btn btn-primary" id="confirmAssignBtn">Assign Car</button>
+                <button class="btn btn-primary" id="confirmStatusBtn">Confirm</button>
             </div>
         </div>
     </div>
 
     <script src="${pageContext.request.contextPath}/js/admin-dashboard.js"></script>
-    <script src="${pageContext.request.contextPath}/js/driver-user-integration.js"></script>
     <script src="${pageContext.request.contextPath}/js/manage-drivers.js"></script>
 </body>
 </html>

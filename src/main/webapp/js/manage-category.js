@@ -1,11 +1,7 @@
-/* 
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/JavaScript.js to edit this template
- */
 /**
  * manage-category.js - JavaScript for Mega City Cab Manage Categories page
  * Created on: Mar 9, 2025
- * Updated on: Mar 10, 2025
+ * Updated on: Mar 11, 2025
  */
 
 // Global variables
@@ -29,10 +25,18 @@ const PASSENGER_LIMITS = {
 
 // Suggested pricing ranges (for UX guidance)
 const PRICE_RANGES = {
-    'Economy': { pricePerKm: { min: 1.00, max: 2.00 }, waitingCharge: { min: 5.00, max: 10.00 } },
-    'Premium': { pricePerKm: { min: 2.00, max: 3.50 }, waitingCharge: { min: 10.00, max: 15.00 } },
-    'Luxury': { pricePerKm: { min: 3.50, max: 5.00 }, waitingCharge: { min: 15.00, max: 25.00 } },
-    'Van': { pricePerKm: { min: 2.50, max: 4.00 }, waitingCharge: { min: 12.00, max: 20.00 } }
+    'Economy': { pricePerKm: { min: 100.00, max: 120.00 }, waitingCharge: { min: 120.00, max: 150.00 } },
+    'Premium': { pricePerKm: { min: 120.00, max: 150.00 }, waitingCharge: { min: 200.00, max: 250.00 } },
+    'Luxury' : { pricePerKm: { min: 200.00, max: 250.00 }, waitingCharge: { min: 500.00, max: 550.00 } },
+    'Van': { pricePerKm: { min: 150.00, max: 4.00 }, waitingCharge: { min: 200.00, max: 250.00 } }
+};
+
+// Category ID mappings
+const CATEGORY_IDS = {
+    'Economy': 1,
+    'Premium': 2,
+    'Luxury': 3,
+    'Van': 4
 };
 
 // DOM Ready
@@ -51,14 +55,48 @@ function initManageCategories() {
     // Load admin info
     loadAdminInfo();
     
-    // Load cars for dropdown
+    // Load cars
     loadCars();
     
     // Load categories
     loadCategories();
     
-    // Initialize max passengers info
-    updateMaxPassengers();
+    // Initialize category dropdown with data attributes
+    initCategoryDropdown();
+}
+
+/**
+ * Initialize category dropdown with data-category-id attributes 
+ * This helps us link category names with their IDs
+ */
+function initCategoryDropdown() {
+    const categorySelect = document.getElementById('categoryName');
+    
+    // Store existing options
+    const firstOption = categorySelect.options[0]; // Save the placeholder option
+    
+    // Clear existing options
+    categorySelect.innerHTML = '';
+    
+    // Add back the first placeholder option
+    categorySelect.appendChild(firstOption);
+    
+    // Define the categories with their IDs
+    const categoryOptions = [
+        { id: 1, name: 'Economy' },
+        { id: 2, name: 'Premium' },
+        { id: 3, name: 'Luxury' },
+        { id: 4, name: 'Van' }
+    ];
+    
+    // Add options with data attributes
+    categoryOptions.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.name;
+        option.textContent = category.name;
+        option.dataset.categoryId = category.id;
+        categorySelect.appendChild(option);
+    });
 }
 
 /**
@@ -101,10 +139,7 @@ function setupEventListeners() {
     document.getElementById('cancelBtn').addEventListener('click', resetForm);
     
     // Category name change (to update max passengers and price ranges)
-    document.getElementById('categoryName').addEventListener('change', function() {
-        updateMaxPassengers();
-        updatePriceRanges();
-    });
+    document.getElementById('categoryName').addEventListener('change', handleCategoryChange);
     
     // Max passengers input validation
     document.getElementById('maxPassengers').addEventListener('input', validateMaxPassengers);
@@ -185,7 +220,7 @@ function loadCars() {
         })
         .then(data => {
             cars = Array.isArray(data) ? data : [];
-            populateCarDropdown();
+            // Don't populate dropdown here - will be handled by category selection
         })
         .catch(error => {
             console.error('Error loading cars:', error);
@@ -194,9 +229,12 @@ function loadCars() {
 }
 
 /**
- * Populate car dropdown options
+ * Filter and populate car dropdown based on the selected category
+ * Fixed to properly include the current car when editing
  */
-function populateCarDropdown() {
+function updateCarDropdownByCategory() {
+    const categorySelect = document.getElementById('categoryName');
+    const categoryName = categorySelect.value;
     const carSelect = document.getElementById('carId');
     
     // Clear existing options (except the first placeholder)
@@ -204,15 +242,133 @@ function populateCarDropdown() {
         carSelect.remove(1);
     }
     
-    // Add car options
-    cars.forEach(car => {
-        if (car.is_active) { // Only show active cars
+    if (!categoryName) {
+        return; // No category selected
+    }
+    
+    // Get the category ID from the selected category option
+    let selectedCategoryId = null;
+    for (const option of categorySelect.options) {
+        if (option.value === categoryName && option.dataset.categoryId) {
+            selectedCategoryId = parseInt(option.dataset.categoryId);
+            break;
+        }
+    }
+    
+    // If not found in the option, use the mapping
+    if (!selectedCategoryId && CATEGORY_IDS[categoryName]) {
+        selectedCategoryId = CATEGORY_IDS[categoryName];
+    }
+    
+    // Get list of car IDs that are already assigned to categories
+    const assignedCarIds = categories
+        .filter(category => category.car_id !== null)
+        .map(category => category.car_id);
+    
+    // Get the current car ID when in edit mode
+    const currentCarId = editMode ? parseInt(document.getElementById('carId').value) : null;
+    
+    // Get the current category we're editing
+    const currentCategory = editMode ? categories.find(c => c.category_id === currentCategoryId) : null;
+    const currentCategoryCarId = currentCategory ? currentCategory.car_id : null;
+    
+    // First, if we're in edit mode, make sure to add the current car to the dropdown
+    if (editMode && currentCategoryCarId) {
+        const currentCar = cars.find(car => car.id === currentCategoryCarId);
+        if (currentCar) {
             const option = document.createElement('option');
-            option.value = car.id;
-            option.textContent = `${car.number_plate} (${car.category_name || 'Not assigned'})`;
+            option.value = currentCar.id;
+            option.textContent = `${currentCar.number_plate} (${currentCar.model || currentCar.chassis_number || 'Current car'})`;
+            option.selected = true;
             carSelect.appendChild(option);
         }
+    }
+    
+    // Then add other matching cars that aren't already assigned
+    const filteredCars = cars.filter(car => {
+        // Skip the current car as we've already added it
+        if (editMode && car.id === currentCategoryCarId) {
+            return false;
+        }
+        
+        const isAlreadyAssigned = assignedCarIds.includes(car.id);
+        
+        // Match the car with the category based on car's category_id field
+        // or include it if it has no category assigned
+        const matchesCategory = car.category_id === selectedCategoryId || 
+                               car.category_id === null || 
+                               car.category_id === 0;
+        
+        // Include car if it's active, matches category, and not assigned to another category
+        return car.is_active && matchesCategory && !isAlreadyAssigned;
     });
+    
+    // Add filtered car options
+    if (filteredCars.length > 0) {
+        filteredCars.forEach(car => {
+            const option = document.createElement('option');
+            option.value = car.id;
+            option.textContent = `${car.number_plate} (${car.model || car.chassis_number || 'No details'})`;
+            carSelect.appendChild(option);
+        });
+    }
+    
+    // If no cars added (not even the current car), add a message
+    if (carSelect.options.length <= 1) {
+        const option = document.createElement('option');
+        option.value = "";
+        option.textContent = `No available ${categoryName} cars`;
+        option.disabled = true;
+        carSelect.appendChild(option);
+    }
+}
+
+/**
+ * Auto-fill price fields with suggested values based on category
+ */
+function autoFillPriceFields() {
+    const categoryName = document.getElementById('categoryName').value;
+    const pricePerKmInput = document.getElementById('pricePerKm');
+    const waitingChargeInput = document.getElementById('waitingCharge');
+    
+    // Only auto-fill if the fields are empty or we're not in edit mode
+    const shouldAutoFill = !editMode || 
+                          pricePerKmInput.value === '' || 
+                          waitingChargeInput.value === '';
+    
+    if (categoryName && PRICE_RANGES[categoryName] && shouldAutoFill) {
+        const priceRange = PRICE_RANGES[categoryName];
+        
+        // Set suggested values
+        if (!editMode || pricePerKmInput.value === '') {
+            // Use the average of min and max for a balanced default value
+            const suggestedPrice = ((priceRange.pricePerKm.min + priceRange.pricePerKm.max) / 2).toFixed(2);
+            pricePerKmInput.value = suggestedPrice;
+        }
+        
+        if (!editMode || waitingChargeInput.value === '') {
+            // Use the average of min and max for a balanced default value
+            const suggestedWaiting = ((priceRange.waitingCharge.min + priceRange.waitingCharge.max) / 2).toFixed(2);
+            waitingChargeInput.value = suggestedWaiting;
+        }
+    }
+}
+
+/**
+ * Enhanced update of UI elements when category selection changes
+ */
+function handleCategoryChange() {
+    // Update max passengers limit
+    updateMaxPassengers();
+    
+    // Update price range hints
+    updatePriceRanges();
+    
+    // Filter and update the car dropdown
+    updateCarDropdownByCategory();
+    
+    // Auto-fill price fields
+    autoFillPriceFields();
 }
 
 /**
@@ -245,7 +401,7 @@ function renderCategories(filteredCategories = null) {
         
         // Find associated car
         const car = cars.find(c => c.id === category.car_id);
-        const carDetails = car ? `${car.number_plate} (${car.category_name || 'Not assigned'})` : 'Not assigned';
+        const carDetails = car ? `${car.number_plate} (${car.model || car.chassis_number || 'No details'})` : 'Not assigned';
         
         // Format category name with appropriate styling
         const categoryClass = category.category_name ? category.category_name.toLowerCase() : 'economy';
@@ -365,15 +521,6 @@ function updatePriceRanges() {
         }
         
         waitingInfoText.textContent = `Suggested range: $${priceRange.waitingCharge.min.toFixed(2)} - $${priceRange.waitingCharge.max.toFixed(2)}`;
-        
-        // Set default values if empty
-        if (!pricePerKmInput.value) {
-            pricePerKmInput.value = priceRange.pricePerKm.min.toFixed(2);
-        }
-        
-        if (!waitingChargeInput.value) {
-            waitingChargeInput.value = priceRange.waitingCharge.min.toFixed(2);
-        }
     } else {
         // Remove hints if no category selected
         const infoTexts = document.querySelectorAll('#pricePerKm, #waitingCharge').forEach(input => {
@@ -444,15 +591,16 @@ function editCategory(categoryId) {
     // Populate the form with category data
     document.getElementById('categoryId').value = category.category_id;
     document.getElementById('categoryName').value = category.category_name || '';
+    
+    // First update category-dependent fields
+    handleCategoryChange();
+    
+    // Then set the car ID (after the dropdown has been populated)
     document.getElementById('carId').value = category.car_id || '';
     document.getElementById('maxPassengers').value = category.max_passengers || '';
     document.getElementById('pricePerKm').value = category.price_per_km ? parseFloat(category.price_per_km).toFixed(2) : '';
     document.getElementById('waitingCharge').value = category.waiting_charge ? parseFloat(category.waiting_charge).toFixed(2) : '';
     document.getElementById('isAvailable').value = category.is_available.toString();
-    
-    // Update max passengers and price ranges info
-    updateMaxPassengers();
-    updatePriceRanges();
     
     // Scroll to the form
     document.querySelector('.category-form').scrollIntoView({ behavior: 'smooth' });
@@ -621,6 +769,7 @@ function validateForm() {
     // Get form elements
     const form = document.getElementById('categoryForm');
     const categoryName = document.getElementById('categoryName').value;
+    const carId = document.getElementById('carId').value;
     const maxPassengers = parseInt(document.getElementById('maxPassengers').value);
     const pricePerKm = parseFloat(document.getElementById('pricePerKm').value);
     const waitingCharge = parseFloat(document.getElementById('waitingCharge').value);
@@ -634,6 +783,21 @@ function validateForm() {
     
     // Validate required fields
     let isValid = true;
+    
+    // Validate car selection
+    if (!carId && categoryName) {
+        isValid = false;
+        
+        // Add error to car field
+        const carGroup = document.getElementById('carId').closest('.form-group');
+        carGroup.classList.add('error');
+        
+        // Add error message
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'error-message';
+        errorMsg.textContent = `Please select a car for the ${categoryName} category`;
+        carGroup.appendChild(errorMsg);
+    }
     
     // Check max passengers limit
     if (categoryName && PASSENGER_LIMITS[categoryName]) {
@@ -690,6 +854,9 @@ function validateForm() {
 /**
  * Reset the category form
  */
+/**
+ * Reset the category form
+ */
 function resetForm() {
     // Reset form fields
     document.getElementById('categoryForm').reset();
@@ -705,6 +872,12 @@ function resetForm() {
     // Reset form state
     editMode = false;
     currentCategoryId = 0;
+    
+    // Clear car dropdown (except first placeholder)
+    const carSelect = document.getElementById('carId');
+    while (carSelect.options.length > 1) {
+        carSelect.remove(1);
+    }
     
     // Update the passenger limit and price range info
     updateMaxPassengers();

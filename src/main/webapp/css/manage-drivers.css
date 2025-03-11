@@ -3,13 +3,13 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to c
 Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to edit this template
 */
 /* 
-    Created on : Mar 10, 2025, 10:51:22 AM
+    Created on : Mar 11, 2025, 6:39:39 AM
     Author     : Admin
 */
 
 /* 
  * manage-drivers.css - Styles specific to the Manage Drivers page
- * Created on: Mar 10, 2025
+ * Created on: Mar 11, 2025
  */
 
 /* Driver Form Styles */
@@ -65,41 +65,9 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     box-shadow: 0 0 0 2px rgba(58, 123, 213, 0.1);
 }
 
-.help-text {
-    font-size: 12px;
-    color: #777;
-    margin-top: 5px;
-}
-
-/* User Selection Group */
-.user-select-container {
-    display: flex;
-    gap: 10px;
-}
-
-.user-select-container select {
-    flex: 1;
-}
-
-.selected-user-info {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #f5f7fa;
-    border-radius: 4px;
-    border-left: 3px solid var(--light-blue);
-}
-
-.user-info-field {
-    margin-bottom: 5px;
-}
-
-.field-label {
-    font-weight: 500;
-    margin-right: 5px;
-}
-
-.field-value {
-    color: var(--text-dark);
+.form-group textarea {
+    resize: vertical;
+    min-height: 60px;
 }
 
 .form-actions {
@@ -162,21 +130,6 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     display: flex;
     align-items: center;
     gap: 15px;
-    flex-wrap: wrap;
-}
-
-/* Filter options */
-.filter-options {
-    display: flex;
-    gap: 10px;
-}
-
-.filter-options select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #fff;
 }
 
 /* Search Box */
@@ -238,8 +191,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     background-color: #f5f5f5;
 }
 
-/* Status badges */
-.status-badge {
+.data-table .status-badge {
     display: inline-block;
     padding: 4px 8px;
     border-radius: 30px;
@@ -247,45 +199,14 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     font-weight: 500;
 }
 
-.status-badge.available {
+.data-table .status-badge.active {
     background-color: #e8f5e9;
     color: #4caf50;
 }
 
-.status-badge.unavailable {
-    background-color: #ffebee;
-    color: #f44336;
-}
-
-/* Expiry badge */
-.expiry-badge {
-    padding: 4px 8px;
-    border-radius: 30px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.expiry-badge.expired {
-    background-color: #ffebee;
-    color: #f44336;
-}
-
-/* Car assignments */
-.no-car {
-    color: #777;
-    font-style: italic;
-}
-
-/* Star ratings */
-.data-table .fa-star, 
-.data-table .fa-star-half-alt {
-    color: #ffb400;
-    font-size: 12px;
-    margin-right: 2px;
-}
-
-.data-table .fa-star.far {
-    color: #ddd;
+.data-table .status-badge.inactive {
+    background-color: #fbe9e7;
+    color: #ff5722;
 }
 
 .table-actions {
@@ -319,22 +240,60 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     background-color: rgba(255, 92, 92, 0.1);
 }
 
-.action-btn.assign,
-.action-btn.reassign {
-    color: #00c853;
+.action-btn.view {
+    color: var(--dark-blue);
 }
 
-.action-btn.assign:hover,
-.action-btn.reassign:hover {
-    background-color: rgba(0, 200, 83, 0.1);
+.action-btn.view:hover {
+    background-color: rgba(26, 48, 100, 0.1);
 }
 
 .action-btn.toggle {
-    color: #ff9800;
+    color: #4caf50;
 }
 
 .action-btn.toggle:hover {
-    background-color: rgba(255, 152, 0, 0.1);
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.action-btn.toggle.inactive {
+    color: #ff5722;
+}
+
+.action-btn.toggle.inactive:hover {
+    background-color: rgba(255, 87, 34, 0.1);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 5px;
+}
+
+.pagination button {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: #f5f5f5;
+}
+
+.pagination button.active {
+    background-color: var(--light-blue);
+    color: white;
+    border-color: var(--light-blue);
+}
+
+.pagination button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 /* Modal Styles */
@@ -402,10 +361,6 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     color: var(--text-dark);
 }
 
-.full-width {
-    width: 100%;
-}
-
 /* Loading indicator */
 .loading-row td {
     text-align: center;
@@ -430,210 +385,10 @@ Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to ed
     margin-top: 5px;
 }
 
-/* Pagination */
-.pagination {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    gap: 5px;
-}
-
-.pagination button {
-    background: none;
-    border: 1px solid #ddd;
-    padding: 8px 12px;
+/* Driver-specific styles */
+.license-info {
+    background-color: #f8f9fa;
+    padding: 10px;
     border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.pagination button:hover:not(:disabled) {
-    background-color: #f5f5f5;
-}
-
-.pagination button.active {
-    background-color: var(--light-blue);
-    color: white;
-    border-color: var(--light-blue);
-}
-
-.pagination button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-/* Alert styles */
-.alert {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 15px 20px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.alert-success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border-left: 4px solid #2e7d32;
-}
-
-.alert-error {
-    background-color: #ffebee;
-    color: #c62828;
-    border-left: 4px solid #c62828;
-}
-
-.alert-warning {
-    background-color: #fff8e1;
-    color: #f57f17;
-    border-left: 4px solid #f57f17;
-}
-
-.alert-info {
-    background-color: #e3f2fd;
-    color: #0d47a1;
-    border-left: 4px solid #0d47a1;
-}
-
-.alert-close {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    color: inherit;
-    opacity: 0.7;
-    transition: opacity 0.3s;
-}
-
-.alert-close:hover {
-    opacity: 1;
-}
-
-/* License expiry warning */
-.license-expiring {
-    background-color: #fff3e0;
-    color: #e65100;
-}
-
-/* Driver stats section */
-.driver-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-title {
-    font-size: 14px;
-    color: #718096;
-    margin-bottom: 10px;
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.stat-icon {
-    background-color: #ebf5ff;
-    color: var(--light-blue);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 15px;
-}
-
-.stat-card.active-drivers .stat-icon {
-    background-color: #e8f5e9;
-    color: #4caf50;
-}
-
-.stat-card.inactive-drivers .stat-icon {
-    background-color: #ffebee;
-    color: #f44336;
-}
-
-.stat-card.expiring-licenses .stat-icon {
-    background-color: #fff3e0;
-    color: #ff9800;
-}
-
-/* Driver details view */
-.driver-details {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 20px;
-}
-
-.driver-profile {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.driver-info-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.driver-info-item {
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
-    display: flex;
-}
-
-.driver-info-item:last-child {
-    border-bottom: none;
-}
-
-.driver-info-label {
-    width: 120px;
-    font-weight: 500;
-    color: #718096;
-}
-
-.driver-info-value {
-    flex: 1;
-}
-
-.driver-activity {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-/* Driver list empty state */
-.empty-drivers {
-    text-align: center;
-    padding: 50px 0;
-}
-
-.empty-drivers i {
-    font-size: 48px;
-    color: #ddd;
-    margin-bottom: 15px;
-}
-
-.empty-drivers p {
-    color: #777;
-    font-size: 16px;
-    margin-bottom: 20px;
+    border-left: 3px solid var(--light-blue);
 }
