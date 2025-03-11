@@ -37,11 +37,11 @@ function initManageDrivers() {
     // Load users for the dropdown
     loadUsersForDropdown();
     
-    // Load cars for the dropdown
-    loadCarsForDropdown();
-    
-    // Load drivers
+    // Load drivers first (changed order)
     loadDrivers();
+    
+    // Load cars for the dropdown (now after drivers)
+    loadCarsForDropdown();
 }
 
 /**
@@ -145,7 +145,11 @@ function loadCarsForDropdown() {
         })
         .then(data => {
             cars = Array.isArray(data) ? data : [];
-            populateCarDropdown();
+            // Call the improved function with current driver ID (if in edit mode)
+            populateCarDropdown(editMode ? currentDriverId : 0);
+            
+            // Re-render the drivers table to ensure car details are displayed correctly
+            renderDrivers();
         })
         .catch(error => {
             console.error('Error loading cars:', error);
@@ -179,18 +183,62 @@ function populateUserDropdown() {
 }
 
 /**
- * Populate car dropdown with available cars
+ * Populate car dropdown with available cars that are not already assigned to active drivers
+ * @param {number} currentDriverId - Optional ID of the current driver being edited
  */
-function populateCarDropdown() {
+function populateCarDropdown(currentDriverId = 0) {
     const carSelect = document.getElementById('carId');
     carSelect.innerHTML = '<option value="">Select Car</option>';
     
-    cars.forEach(car => {
-        const option = document.createElement('option');
-        option.value = car.id;
-        option.textContent = `${car.number_plate} (${car.chassis_number})`;
-        carSelect.appendChild(option);
+    // Debug: Log the cars data structure to help identify property names
+    if (cars.length > 0) {
+        console.log('Car data structure:', cars[0]);
+    }
+    
+    // Create a set of car IDs that are already assigned to active drivers
+    const assignedCarIds = new Set();
+    drivers.forEach(driver => {
+        // Skip the current driver being edited to allow keeping the same car
+        if (driver.driver_id !== currentDriverId && driver.active_status === true) {
+            assignedCarIds.add(driver.car_id);
+        }
     });
+    
+    // Filter available cars (not assigned to any active driver)
+    const availableCars = cars.filter(car => {
+        // Check if either car.id or car.car_id is in assignedCarIds
+        const carIdMatch = !assignedCarIds.has(car.id);
+        const carCarIdMatch = !assignedCarIds.has(car.car_id);
+        return carIdMatch && carCarIdMatch;
+    });
+    
+    if (availableCars.length === 0) {
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.textContent = "No available cars found";
+        carSelect.appendChild(option);
+    } else {
+        availableCars.forEach(car => {
+            const option = document.createElement('option');
+            // Use car.id or car.car_id depending on which one exists
+            option.value = car.id || car.car_id;
+            option.textContent = `${car.number_plate} (${car.chassis_number || ''})`;
+            carSelect.appendChild(option);
+        });
+    }
+    
+    // Add a note about car availability
+    const helpText = document.createElement('div');
+    helpText.className = 'form-text mt-1';
+    helpText.innerHTML = `<small>Showing only available cars (${availableCars.length} of ${cars.length} total).</small>`;
+    
+    // Remove any existing help text before adding new one
+    const existingHelpText = carSelect.parentNode.querySelector('.form-text');
+    if (existingHelpText) {
+        existingHelpText.remove();
+    }
+    
+    carSelect.parentNode.appendChild(helpText);
 }
 
 /**
@@ -217,6 +265,12 @@ function loadDrivers() {
         })
         .then(data => {
             drivers = Array.isArray(data) ? data : [];
+            
+            // Debug: Log the structure of the first driver to help identify property names
+            if (drivers.length > 0) {
+                console.log('Driver data structure:', drivers[0]);
+            }
+            
             renderDrivers();
             renderPagination();
         })
@@ -249,8 +303,21 @@ function getUserNameById(userId) {
  * @returns {string} - Car details
  */
 function getCarDetailsById(carId) {
-    const car = cars.find(c => c.id === carId);
-    return car ? `${car.number_plate}` : 'Unknown Car';
+    // Try to find car by id first
+    let car = cars.find(c => c.id === carId);
+    
+    // If not found, try to find by car_id if that's the property name in your data
+    if (!car) {
+        car = cars.find(c => c.car_id === carId);
+    }
+    
+    // If still not found, try with string comparison (in case of type mismatch)
+    if (!car) {
+        car = cars.find(c => String(c.id) === String(carId) || String(c.car_id) === String(carId));
+    }
+    
+    // Return car details if found, otherwise 'Unknown Car'
+    return car ? `${car.number_plate} (${car.chassis_number || ''})` : 'Unknown Car';
 }
 
 /**
@@ -436,6 +503,9 @@ function showAddDriverForm() {
     // Reset the form
     resetForm();
     
+    // Refresh car dropdown to show only available cars
+    populateCarDropdown(0);
+    
     // Scroll to the form
     document.querySelector('.driver-form').scrollIntoView({ behavior: 'smooth' });
 }
@@ -459,6 +529,9 @@ function editDriver(driverId) {
     
     // Update form title
     document.getElementById('formTitle').textContent = 'Edit Driver';
+    
+    // Populate car dropdown with available cars + current car
+    populateCarDropdown(driverId);
     
     // Populate the form with driver data
     document.getElementById('driverId').value = driver.driver_id;
@@ -565,6 +638,11 @@ function confirmStatusChange() {
         // Re-render the table
         renderDrivers();
         
+        // If activating a driver, refresh the car dropdown to exclude their car
+        if (newStatus) {
+            populateCarDropdown(editMode ? currentDriverId : 0);
+        }
+        
         // Show success message
         showAlert(`Driver status updated to ${newStatus ? 'Active' : 'Inactive'}`, 'success');
     })
@@ -619,6 +697,9 @@ function confirmDeleteDriver() {
         // Re-render the table
         renderDrivers();
         renderPagination();
+        
+        // Refresh car dropdown as a car may now be available
+        populateCarDropdown(editMode ? currentDriverId : 0);
         
         // Show success message
         showAlert('Driver deleted successfully', 'success');
