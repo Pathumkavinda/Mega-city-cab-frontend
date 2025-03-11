@@ -1,0 +1,327 @@
+/* 
+ * customer-dashboard.css - Styles for Customer Dashboard with Bootstrap
+ * Created on: Mar 11, 2025
+ */
+
+:root {
+    --primary-color: #3a86ff;
+    --primary-dark: #2667cc;
+    --secondary-color: #f8f9fa;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --body-bg: #f8f9fa;
+    --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --transition: all 0.3s ease;
+}
+
+body {
+    background-color: var(--body-bg);
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    padding-bottom: 0; /* Remove default padding for footer */
+}
+
+/* Avatar Circle */
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    background-color: #ffffff33;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.initials {
+    font-size: 14px;
+    line-height: 1;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Welcome Banner */
+.welcome-banner {
+    background: linear-gradient(135deg, #3a86ff 0%, #2667cc 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.welcome-text {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+/* Custom Nav Pills */
+.nav-pills .nav-link {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    color: #495057;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    margin-right: 0.5rem;
+    transition: var(--transition);
+}
+
+.nav-pills .nav-link:last-child {
+    margin-right: 0;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+    background-color: var(--secondary-color);
+}
+
+@media (max-width: 768px) {
+    .nav-pills .nav-link {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Booking Item Styles */
+.booking-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.booking-item {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+    transition: var(--transition);
+}
+
+.booking-item:last-child {
+    border-bottom: none;
+}
+
+.booking-item:hover {
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+.booking-id {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.booking-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.booking-status.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.booking-status.confirmed {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.booking-status.in-progress {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.booking-status.completed {
+    background-color: #e8f5e9;
+    color: #155724;
+}
+
+.booking-status.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.booking-locations {
+    position: relative;
+    padding: 0.75rem 0 0.75rem 1.5rem;
+    margin: 0.75rem 0;
+}
+
+.booking-locations::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 1.5rem;
+    bottom: 1.5rem;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.location-point {
+    position: relative;
+    padding: 0.5rem 0;
+}
+
+.location-point::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+}
+
+.location-point.destination::before {
+    background-color: #28a745;
+}
+
+.location-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+/* Empty State Styling */
+.empty-state {
+    padding: 3rem 0;
+    text-align: center;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+/* Payment Methods Styles */
+.payment-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #fff;
+    transition: var(--transition);
+}
+
+.payment-card:hover {
+    box-shadow: var(--card-shadow);
+}
+
+.card-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+}
+
+.card-icon.visa {
+    color: #1a1f71;
+}
+
+.card-icon.mastercard {
+    color: #eb001b;
+}
+
+.card-icon.amex {
+    color: #006fcf;
+}
+
+/* Booking Details Modal */
+.route-display {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.price-summary {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+}
+
+.price-total {
+    border-top: 1px dashed #dee2e6;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    font-weight: 700;
+}
+
+/* Remove Bootstrap table border in cards */
+.table-in-card {
+    margin-bottom: 0;
+}
+
+.table-in-card th,
+.table-in-card td {
+    padding: 0.75rem 1.25rem;
+}
+
+/* Footer Social Icons */
+.social-icons a {
+    font-size: 1.2rem;
+    transition: var(--transition);
+}
+
+.social-icons a:hover {
+    opacity: 0.8;
+}
+
+/* Custom Scrollbar for Booking List */
+.booking-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.booking-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.booking-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 6px;
+}
+
+.booking-list::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .welcome-banner .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .welcome-banner .btn-primary {
+        margin-top: 1rem;
+    }
+    
+    .booking-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
