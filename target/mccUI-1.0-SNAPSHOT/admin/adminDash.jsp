@@ -205,7 +205,6 @@
             </div>
         </div>
     </main>
-
     <script src="${pageContext.request.contextPath}/js/admin-dashboard.js"></script>
 </body>
 </html>

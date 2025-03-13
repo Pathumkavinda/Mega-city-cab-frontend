@@ -720,8 +720,12 @@ function closeAlert(btn) {
 /**
  * Handle logout functionality
  */
-function handleLogout() {
-    // In a real application, this would send a request to invalidate the session
-    // For now, just redirect to the login page
-    window.location.href = '../index.jsp';
+//function handleLogout() {
+//    // In a real application, this would send a request to invalidate the session
+//    // For now, just redirect to the login page
+//    window.location.href = '../index.jsp';
+//}
+function logout() {
+    sessionStorage.clear();
+    window.location.href = '../login.jsp';
 }

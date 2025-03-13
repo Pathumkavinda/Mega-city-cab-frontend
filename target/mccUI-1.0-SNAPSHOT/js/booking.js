@@ -1,852 +1,975 @@
 /* 
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/JavaScript.js to edit this template
+ * MegacityCabs - Booking JavaScript
+ * Handles the booking form functionality for customers
  */
 
 /**
- * booking.js - JavaScript for Mega City Cab Booking page
- * Created on: Mar 10, 2025
+ * Initialize the page when DOM is loaded
  */
-
-// Global variables
-let currentStep = 1;
-let totalSteps = 4;
-let packages = [];
-let cars = [];
-let selectedPackage = null;
-let selectedCar = null;
-let userId = null;
-
-// API endpoints
-const API_BASE_URL = "http://localhost:8080/mccAPI/api";
-const PACKAGES_ENDPOINT = `${API_BASE_URL}/packages`;
-const CARS_ENDPOINT = `${API_BASE_URL}/cars`;
-const BOOKINGS_ENDPOINT = `${API_BASE_URL}/bookings`;
-
-// DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if user is logged in
-    checkUserLogin();
+    // First validate user session
+    if (!validateUserSession()) {
+        return; // Stop if session validation fails
+    }
     
-    // Initialize the booking process
-    initBooking();
-    
-    // Setup event listeners
-    setupEventListeners();
+    // Check if we're on the booking page
+    if (window.location.pathname.includes('addBooking.jsp')) {
+        initializeBookingForm();
+    }
 });
 
 /**
- * Check if user is logged in
+ * Initialize the booking form with defaults and event listeners
  */
-function checkUserLogin() {
-    // Get user ID from session storage
-    userId = sessionStorage.getItem('userId');
+function initializeBookingForm() {
+    console.log('Initializing booking form...');
     
-    // If not logged in, redirect to login page
-    if (!userId) {
-        window.location.href = 'login.jsp';
+    // Set default values for date and time
+    setDefaultDateTime();
+    
+    // Load package types
+    loadPackages();
+    
+    // Set up form submission handler
+    const bookingForm = document.getElementById('booking-form');
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (validateBookingForm()) {
+                submitBooking();
+            }
+        });
+    }
+    
+    // Add validation styles
+    addValidationStyles();
+    
+    // Create error and success message containers if they don't exist
+    if (!document.getElementById('error-message')) {
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'error-message';
+        const formContainer = document.querySelector('.form-container') || bookingForm;
+        if (formContainer) {
+            formContainer.insertBefore(errorDiv, formContainer.firstChild);
+        }
+    }
+    
+    if (!document.getElementById('success-message')) {
+        const successDiv = document.createElement('div');
+        successDiv.id = 'success-message';
+        const formContainer = document.querySelector('.form-container') || bookingForm;
+        if (formContainer) {
+            formContainer.insertBefore(successDiv, formContainer.firstChild);
+        }
     }
 }
 
 /**
- * Initialize the booking process
+ * Set default date (today) and time (current time + 1 hour)
  */
-function initBooking() {
-    // Set minimum date for pickup to today
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
-    document.getElementById('pickupDate').min = formattedDate;
+function setDefaultDateTime() {
+    const pickupDateInput = document.getElementById('pickup-date');
+    const pickupTimeInput = document.getElementById('pickup-time');
     
-    // Set default pickup time to current time + 1 hour
-    const nextHour = new Date(today.getTime() + 60 * 60 * 1000);
-    const hours = nextHour.getHours().toString().padStart(2, '0');
-    const minutes = nextHour.getMinutes().toString().padStart(2, '0');
-    document.getElementById('pickupTime').value = `${hours}:${minutes}`;
+    if (pickupDateInput) {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        pickupDateInput.min = formattedDate; // Can't select dates in the past
+        pickupDateInput.value = formattedDate;
+    }
     
-    // Load active packages
-    loadPackages();
-    
-    // Show the first step
-    showStep(1);
-    
-    // Update progress bar
-    updateProgress(1);
+    if (pickupTimeInput) {
+        const now = new Date();
+        now.setHours(now.getHours() + 1); // Add 1 hour to current time
+        now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15); // Round to nearest 15 min
+        
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        pickupTimeInput.value = `${hours}:${minutes}`;
+    }
 }
 
 /**
- * Setup event listeners for interactive elements
- */
-function setupEventListeners() {
-    // Next and previous buttons
-    document.querySelectorAll('.btn-next').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const stepIndex = parseInt(this.getAttribute('data-step'));
-            
-            // Validate current step before proceeding
-            if (validateStep(stepIndex)) {
-                nextStep();
-            }
-        });
-    });
-    
-    document.querySelectorAll('.btn-prev').forEach(btn => {
-        btn.addEventListener('click', function() {
-            prevStep();
-        });
-    });
-    
-    // Package selection
-    document.getElementById('packageOptions').addEventListener('click', function(e) {
-        const packageCard = e.target.closest('.package-card');
-        if (packageCard) {
-            selectPackage(packageCard);
-        }
-    });
-    
-    // Car selection
-    document.getElementById('carOptions').addEventListener('click', function(e) {
-        const carCard = e.target.closest('.car-card');
-        if (carCard) {
-            selectCar(carCard);
-        }
-    });
-    
-    // Booking form submission
-    document.getElementById('bookingForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitBooking();
-    });
-    
-    // Final confirmation button
-    document.getElementById('confirmBookingBtn').addEventListener('click', function() {
-        submitBooking();
-    });
-    
-    // Form change events for updating summary
-    document.querySelectorAll('#step1 input, #step1 select, #step2 input').forEach(input => {
-        input.addEventListener('change', updateBookingSummary);
-    });
-    
-    // Package type filter
-    document.getElementById('packageTypeFilter').addEventListener('change', filterPackages);
-}
-
-/**
- * Load active packages from the API
+ * Load package types from the API
  */
 function loadPackages() {
-    // Show loading indicator
-    const packageOptions = document.getElementById('packageOptions');
-    packageOptions.innerHTML = `
-        <div class="loading-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Loading packages...
-        </div>
-    `;
+    const packageSelect = document.getElementById('vehicle-type');
+    if (!packageSelect) {
+        console.error("Could not find package select element with id 'vehicle-type'");
+        return;
+    }
     
-    // Fetch active packages from API
-    fetch(`${PACKAGES_ENDPOINT}?active=true`)
+    // Set loading state
+    packageSelect.innerHTML = '<option value="">Loading packages...</option>';
+    packageSelect.disabled = true;
+    
+    console.log("Fetching packages from API...");
+    
+    // Fetch packages from API
+    fetch('http://localhost:8080/mccAPI/api/packages')
         .then(response => {
             if (!response.ok) {
-                throw new Error('Failed to load packages');
+                throw new Error(`Failed to load packages: ${response.status}`);
             }
             return response.json();
         })
-        .then(data => {
-            packages = Array.isArray(data) ? data : [];
-            renderPackages();
+        .then(packages => {
+            console.log("Packages loaded successfully:", packages);
+            
+            // Clear loading state
+            packageSelect.innerHTML = '<option value="">Select a package</option>';
+            
+            // Add packages to select dropdown
+            packages.forEach(pkg => {
+                const option = document.createElement('option');
+                option.value = pkg.package_id.toString(); // Ensure string conversion
+                
+                // Create descriptive option text including package type and pricing
+                let optionText = `${pkg.package_name} (${pkg.category_name})`;
+                
+                // Add pricing info based on package type
+                if (pkg.package_type === 'Day') {
+                    optionText += ` - LKR ${pkg.base_price.toFixed(2)} (${pkg.included_kilometers} km)`;
+                } else if (pkg.package_type === 'Kilometer') {
+                    optionText += ` - LKR ${pkg.per_kilometer_charge.toFixed(2)}/km`;
+                }
+                
+                option.textContent = optionText;
+                
+                // Store additional data as attributes for fare calculation
+                option.dataset.packageType = pkg.package_type;
+                option.dataset.basePrice = pkg.base_price;
+                option.dataset.perKm = pkg.per_kilometer_charge;
+                option.dataset.includedKm = pkg.included_kilometers;
+                option.dataset.waitingCharge = pkg.waiting_charge;
+                option.dataset.categoryName = pkg.category_name;
+                
+                packageSelect.appendChild(option);
+            });
+            
+            // Enable select
+            packageSelect.disabled = false;
+            
+            // Set up form listeners for fare estimation
+            setupFormListeners();
         })
         .catch(error => {
             console.error('Error loading packages:', error);
-            packageOptions.innerHTML = `
-                <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i> Failed to load packages. Please try again.
-                </div>
-            `;
+            packageSelect.innerHTML = '<option value="">Error loading packages</option>';
+            showError('Failed to load packages. Please try again later.');
+            
+            // Add fallback packages if API fails
+            addFallbackPackages(packageSelect);
+            
+            // Still set up listeners even with fallback data
+            setupFormListeners();
         });
 }
 
 /**
- * Render packages in the package options section
+ * Set up form listeners for calculating fare estimate
  */
-function renderPackages(filteredPackages = null) {
-    const packageOptions = document.getElementById('packageOptions');
-    const packagesToRender = filteredPackages || packages;
-    
-    // Clear container
-    packageOptions.innerHTML = '';
-    
-    // Check if there are packages to display
-    if (!packagesToRender || packagesToRender.length === 0) {
-        packageOptions.innerHTML = `
-            <div class="empty-message">
-                <i class="fas fa-box"></i>
-                <p>No packages available for the selected criteria.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Render packages
-    packagesToRender.forEach(pkg => {
-        const packageCard = document.createElement('div');
-        packageCard.className = 'package-card';
-        packageCard.setAttribute('data-package-id', pkg.package_id);
-        
-        // Set selected class if this package is the selected one
-        if (selectedPackage && selectedPackage.package_id === pkg.package_id) {
-            packageCard.classList.add('selected');
-        }
-        
-        // Format category name for display
-        const categoryClass = pkg.category_name ? pkg.category_name.toLowerCase() : 'economy';
-        
-        // Format description based on package type
-        let packageDetails = '';
-        if (pkg.package_type === 'Day') {
-            packageDetails = `
-                <div class="package-details">
-                    <i class="fas fa-road"></i> ${pkg.included_kilometers}km included
-                </div>
-                <div class="package-details">
-                    <i class="fas fa-coins"></i> Rs. ${pkg.per_kilometer_charge.toFixed(2)}/km after limit
-                </div>
-            `;
-        } else {
-            packageDetails = `
-                <div class="package-details">
-                    <i class="fas fa-coins"></i> Rs. ${pkg.per_kilometer_charge.toFixed(2)}/km
-                </div>
-            `;
-        }
-        
-        packageCard.innerHTML = `
-            <div class="package-category ${categoryClass}">${pkg.category_name}</div>
-            <div class="package-name">${pkg.package_name}</div>
-            <div class="package-price">Rs. ${pkg.base_price.toFixed(2)}</div>
-            ${packageDetails}
-            <div class="package-details">
-                <i class="fas fa-clock"></i> Waiting charge: Rs. ${pkg.waiting_charge.toFixed(2)}
-            </div>
-        `;
-        
-        packageOptions.appendChild(packageCard);
-    });
-}
-
-/**
- * Filter packages based on type selection
- */
-function filterPackages() {
-    const packageTypeFilter = document.getElementById('packageTypeFilter').value;
-    
-    if (packageTypeFilter === 'all') {
-        renderPackages();
-        return;
-    }
-    
-    // Filter packages by type
-    const filteredPackages = packages.filter(pkg => pkg.package_type === packageTypeFilter);
-    renderPackages(filteredPackages);
-}
-
-/**
- * Load cars for the selected package category
- */
-function loadCars() {
-    // Only load cars if a package is selected
-    if (!selectedPackage) {
-        return;
-    }
-    
-    const carOptions = document.getElementById('carOptions');
-    
-    // Show loading indicator
-    carOptions.innerHTML = `
-        <div class="loading-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Loading available cars...
-        </div>
-    `;
-    
-    // Fetch cars from API by category
-    fetch(`${CARS_ENDPOINT}?status=true&category=${selectedPackage.category_name}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load cars');
-            }
-            return response.json();
-        })
-        .then(data => {
-            cars = Array.isArray(data) ? data : [];
-            renderCars();
-        })
-        .catch(error => {
-            console.error('Error loading cars:', error);
-            carOptions.innerHTML = `
-                <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i> Failed to load cars. Please try again.
-                </div>
-            `;
-        });
-}
-
-/**
- * Render cars in the car options section
- */
-function renderCars() {
-    const carOptions = document.getElementById('carOptions');
-    
-    // Clear container
-    carOptions.innerHTML = '';
-    
-    // Check if there are cars to display
-    if (!cars || cars.length === 0) {
-        carOptions.innerHTML = `
-            <div class="empty-message">
-                <i class="fas fa-car"></i>
-                <p>No cars available for this category.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Render cars
-    cars.forEach(car => {
-        const carCard = document.createElement('div');
-        carCard.className = 'car-card';
-        carCard.setAttribute('data-car-id', car.id);
-        
-        // Set selected class if this car is the selected one
-        if (selectedCar && selectedCar.id === car.id) {
-            carCard.classList.add('selected');
-        }
-        
-        // Format category name for display
-        const categoryClass = car.category_name ? car.category_name.toLowerCase() : 'economy';
-        
-        carCard.innerHTML = `
-            <div class="car-icon">
-                <i class="fas fa-car"></i>
-            </div>
-            <div class="car-plate">${car.number_plate}</div>
-            <div class="car-category ${categoryClass}">${car.category_name}</div>
-            <div class="car-details">
-                <i class="fas fa-id-card"></i> ${car.chassis_number}
-            </div>
-        `;
-        
-        carOptions.appendChild(carCard);
-    });
-}
-
-/**
- * Select a package
- * @param {HTMLElement} packageCard - Selected package card element
- */
-function selectPackage(packageCard) {
-    // Remove selected class from all package cards
-    document.querySelectorAll('.package-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Add selected class to clicked card
-    packageCard.classList.add('selected');
-    
-    // Get package ID from data attribute
-    const packageId = parseInt(packageCard.getAttribute('data-package-id'));
-    
-    // Find the package in our data
-    selectedPackage = packages.find(pkg => pkg.package_id === packageId);
-    
-    // Update the next button
-    updateNextButton();
-    
-    // Update booking summary
-    updateBookingSummary();
-}
-
-/**
- * Select a car
- * @param {HTMLElement} carCard - Selected car card element
- */
-function selectCar(carCard) {
-    // Remove selected class from all car cards
-    document.querySelectorAll('.car-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Add selected class to clicked card
-    carCard.classList.add('selected');
-    
-    // Get car ID from data attribute
-    const carId = parseInt(carCard.getAttribute('data-car-id'));
-    
-    // Find the car in our data
-    selectedCar = cars.find(car => car.id === carId);
-    
-    // Update the next button
-    updateNextButton();
-    
-    // Update booking summary
-    updateBookingSummary();
-}
-
-/**
- * Update the next button state based on step validation
- */
-function updateNextButton() {
-    const nextBtn = document.querySelector(`.btn-next[data-step="${currentStep}"]`);
-    
-    if (!nextBtn) return;
-    
-    let isValid = false;
-    
-    switch (currentStep) {
-        case 1:
-            // Location step - validate both pickup and destination
-            const pickupLocation = document.getElementById('pickupLocation').value;
-            const destination = document.getElementById('destination').value;
-            isValid = pickupLocation && destination;
-            break;
-        case 2:
-            // Package step - validate package selection
-            isValid = selectedPackage !== null;
-            break;
-        case 3:
-            // Car step - validate car selection
-            isValid = selectedCar !== null;
-            break;
-        default:
-            isValid = true;
-    }
-    
-    nextBtn.disabled = !isValid;
-}
-
-/**
- * Update booking summary
- */
-function updateBookingSummary() {
-    const summaryContainer = document.getElementById('bookingSummary');
-    
-    // Details to display
-    const pickupLocation = document.getElementById('pickupLocation').value || 'Not specified';
-    const destination = document.getElementById('destination').value || 'Not specified';
-    const pickupDate = document.getElementById('pickupDate').value || 'Not specified';
-    const pickupTime = document.getElementById('pickupTime').value || 'Not specified';
-    const passengers = document.getElementById('passengers').value || '1';
-    const notes = document.getElementById('notes').value || 'None';
-    
-    // Format date and time
-    let formattedDateTime = 'Not specified';
-    if (pickupDate && pickupTime) {
-        const date = new Date(`${pickupDate}T${pickupTime}`);
-        formattedDateTime = date.toLocaleString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-    
-    // Package details
-    let packageDetails = 'No package selected';
-    let priceDetails = '';
-    let totalPrice = 0;
-    
-    if (selectedPackage) {
-        // Basic package info
-        packageDetails = `
-            <div class="summary-row">
-                <span class="summary-label">Package Name:</span>
-                <span class="summary-value">${selectedPackage.package_name}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Category:</span>
-                <span class="summary-value">${selectedPackage.category_name}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Package Type:</span>
-                <span class="summary-value">${selectedPackage.package_type}</span>
-            </div>
-        `;
-        
-        // Price calculations
-        totalPrice = selectedPackage.base_price;
-        
-        priceDetails = `
-            <div class="summary-row">
-                <span class="summary-label">Base Price:</span>
-                <span class="summary-value">Rs. ${selectedPackage.base_price.toFixed(2)}</span>
-            </div>
-        `;
-        
-        if (selectedPackage.package_type === 'Day') {
-            priceDetails += `
-                <div class="summary-row">
-                    <span class="summary-label">Included Kilometers:</span>
-                    <span class="summary-value">${selectedPackage.included_kilometers} km</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-label">Extra KM Charge:</span>
-                    <span class="summary-value">Rs. ${selectedPackage.per_kilometer_charge.toFixed(2)}/km</span>
-                </div>
-            `;
-        } else {
-            priceDetails += `
-                <div class="summary-row">
-                    <span class="summary-label">Per Kilometer Charge:</span>
-                    <span class="summary-value">Rs. ${selectedPackage.per_kilometer_charge.toFixed(2)}/km</span>
-                </div>
-            `;
-        }
-        
-        priceDetails += `
-            <div class="summary-row">
-                <span class="summary-label">Waiting Charge:</span>
-                <span class="summary-value">Rs. ${selectedPackage.waiting_charge.toFixed(2)}</span>
-            </div>
-        `;
-    }
-    
-    // Car details
-    let carDetails = 'No car selected';
-    
-    if (selectedCar) {
-        carDetails = `
-            <div class="summary-row">
-                <span class="summary-label">Car:</span>
-                <span class="summary-value">${selectedCar.number_plate} (${selectedCar.category_name})</span>
-            </div>
-        `;
-    }
-    
-    // Final summary HTML
-    const summaryHTML = `
-        <div class="summary-section">
-            <h3>Trip Details</h3>
-            <div class="summary-row">
-                <span class="summary-label">Pickup Location:</span>
-                <span class="summary-value">${pickupLocation}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Destination:</span>
-                <span class="summary-value">${destination}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Pickup Date & Time:</span>
-                <span class="summary-value">${formattedDateTime}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Passengers:</span>
-                <span class="summary-value">${passengers}</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label">Additional Notes:</span>
-                <span class="summary-value">${notes}</span>
-            </div>
-        </div>
-        
-        <div class="summary-section">
-            <h3>Package Information</h3>
-            ${packageDetails}
-        </div>
-        
-        <div class="summary-section">
-            <h3>Car Information</h3>
-            ${carDetails}
-        </div>
-        
-        <div class="summary-section">
-            <h3>Price Breakdown</h3>
-            ${priceDetails}
-            <div class="total-row">
-                <span>Total Amount:</span>
-                <span>Rs. ${totalPrice.toFixed(2)}</span>
-            </div>
-            <div class="info-text">
-                Note: Final price may vary based on actual distance traveled and waiting time.
-            </div>
-        </div>
-    `;
-    
-    summaryContainer.innerHTML = summaryHTML;
-}
-
-/**
- * Validate current step before proceeding
- * @param {number} step - Current step to validate
- * @returns {boolean} - True if valid, false otherwise
- */
-function validateStep(step) {
-    switch (step) {
-        case 1:
-            // Validate location details
-            return validateLocationDetails();
-        case 2:
-            // Validate package selection
-            return selectedPackage !== null;
-        case 3:
-            // Validate car selection
-            return selectedCar !== null;
-        default:
-            return true;
-    }
-}
-
-/**
- * Validate location details
- * @returns {boolean} - True if valid, false otherwise
- */
-function validateLocationDetails() {
-    let isValid = true;
-    
-    // Clear previous error messages
-    document.querySelectorAll('.form-group.error').forEach(group => {
-        group.classList.remove('error');
-    });
-    
-    document.querySelectorAll('.error-message').forEach(message => {
-        message.remove();
-    });
-    
-    // Validate pickup location
-    const pickupLocation = document.getElementById('pickupLocation');
-    if (!pickupLocation.value.trim()) {
-        isValid = false;
-        addErrorToField(pickupLocation, 'Pickup location is required');
-    }
-    
-    // Validate destination
+function setupFormListeners() {
+    const pickupLocation = document.getElementById('pickup-location');
     const destination = document.getElementById('destination');
-    if (!destination.value.trim()) {
-        isValid = false;
-        addErrorToField(destination, 'Destination is required');
-    }
+    const vehicleType = document.getElementById('vehicle-type');
     
-    // Validate pickup date
-    const pickupDate = document.getElementById('pickupDate');
-    if (!pickupDate.value) {
-        isValid = false;
-        addErrorToField(pickupDate, 'Pickup date is required');
-    } else {
-        // Make sure date is not in the past
-        const selectedDate = new Date(pickupDate.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (selectedDate < today) {
-            isValid = false;
-            addErrorToField(pickupDate, 'Pickup date cannot be in the past');
+    // Add change listeners to update fare estimate
+    if (pickupLocation && destination && vehicleType) {
+        [pickupLocation, destination, vehicleType].forEach(element => {
+            element.addEventListener('change', calculateFareEstimate);
+            element.addEventListener('input', calculateFareEstimate);
+        });
+    }
+}
+
+/**
+ * Add fallback package options when API fails
+ */
+function addFallbackPackages(selectElement) {
+    console.log("Adding fallback package options");
+    
+    const fallbackPackages = [
+        { 
+            id: 1, 
+            name: "Economy Day Package", 
+            type: "Day",
+            category: "Economy",
+            basePrice: 20000,
+            includedKm: 250,
+            perKm: 60,
+            waitingCharge: 300
+        },
+        { 
+            id: 2, 
+            name: "Economy Kilometer Package", 
+            type: "Kilometer",
+            category: "Economy",
+            basePrice: 100,
+            includedKm: 0,
+            perKm: 100,
+            waitingCharge: 150
+        },
+        { 
+            id: 3, 
+            name: "Premium Day Package", 
+            type: "Day",
+            category: "Premium",
+            basePrice: 32000,
+            includedKm: 250,
+            perKm: 80,
+            waitingCharge: 400
+        },
+        { 
+            id: 4, 
+            name: "Premium Kilometer Package", 
+            type: "Kilometer",
+            category: "Premium",
+            basePrice: 150,
+            includedKm: 0,
+            perKm: 150,
+            waitingCharge: 250
         }
-    }
+    ];
     
-    // Validate pickup time
-    const pickupTime = document.getElementById('pickupTime');
-    if (!pickupTime.value) {
-        isValid = false;
-        addErrorToField(pickupTime, 'Pickup time is required');
-    }
-    
-    // Validate passengers
-    const passengers = document.getElementById('passengers');
-    if (!passengers.value || passengers.value < 1) {
-        isValid = false;
-        addErrorToField(passengers, 'At least 1 passenger is required');
-    }
-    
-    return isValid;
-}
-
-/**
- * Add error message to a form field
- * @param {HTMLElement} field - Field to add error to
- * @param {string} message - Error message
- */
-function addErrorToField(field, message) {
-    const formGroup = field.closest('.form-group');
-    formGroup.classList.add('error');
-    
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'error-message';
-    errorMessage.textContent = message;
-    
-    formGroup.appendChild(errorMessage);
-}
-
-/**
- * Go to next step
- */
-function nextStep() {
-    if (currentStep < totalSteps) {
-        // Hide current step
-        document.getElementById(`step${currentStep}`).classList.remove('active');
+    fallbackPackages.forEach(pkg => {
+        const option = document.createElement('option');
+        option.value = pkg.id.toString(); // Ensure string conversion
         
-        // Increment step
-        currentStep++;
-        
-        // Load cars if moving to car selection step
-        if (currentStep === 3) {
-            loadCars();
-        }
-        
-        // Update summary if moving to confirmation step
-        if (currentStep === 4) {
-            updateBookingSummary();
-        }
-        
-        // Show next step
-        showStep(currentStep);
-        
-        // Update progress
-        updateProgress(currentStep);
-    }
-}
-
-/**
- * Go to previous step
- */
-function prevStep() {
-    if (currentStep > 1) {
-        // Hide current step
-        document.getElementById(`step${currentStep}`).classList.remove('active');
-        
-        // Decrement step
-        currentStep--;
-        
-        // Show previous step
-        showStep(currentStep);
-        
-        // Update progress
-        updateProgress(currentStep);
-    }
-}
-
-/**
- * Show a specific step
- * @param {number} step - Step number to show
- */
-function showStep(step) {
-    // Hide all steps
-    document.querySelectorAll('.booking-step').forEach(stepEl => {
-        stepEl.classList.remove('active');
-    });
-    
-    // Show the target step
-    document.getElementById(`step${step}`).classList.add('active');
-    
-    // Update next button state
-    updateNextButton();
-}
-
-/**
- * Update progress bar
- * @param {number} step - Current step
- */
-function updateProgress(step) {
-    document.querySelectorAll('.progress-step').forEach((stepEl, index) => {
-        // Add +1 to index because steps are 1-indexed
-        const stepNum = index + 1;
-        
-        if (stepNum < step) {
-            // Previous steps are completed
-            stepEl.classList.add('completed');
-            stepEl.classList.remove('active');
-        } else if (stepNum === step) {
-            // Current step is active
-            stepEl.classList.add('active');
-            stepEl.classList.remove('completed');
+        let optionText = `${pkg.name} (${pkg.category})`;
+        if (pkg.type === 'Day') {
+            optionText += ` - LKR ${pkg.basePrice.toFixed(2)} (${pkg.includedKm} km)`;
         } else {
-            // Future steps are neither active nor completed
-            stepEl.classList.remove('active', 'completed');
+            optionText += ` - LKR ${pkg.perKm.toFixed(2)}/km`;
         }
+        
+        option.textContent = optionText;
+        
+        // Store data for fare calculation
+        option.dataset.packageType = pkg.type;
+        option.dataset.basePrice = pkg.basePrice;
+        option.dataset.perKm = pkg.perKm;
+        option.dataset.includedKm = pkg.includedKm;
+        option.dataset.waitingCharge = pkg.waitingCharge;
+        option.dataset.categoryName = pkg.category;
+        
+        selectElement.appendChild(option);
     });
+    
+    selectElement.disabled = false;
 }
 
 /**
- * Submit booking to the API
+ * Calculate and display fare estimate based on selections
+ */
+function calculateFareEstimate() {
+    const pickupLocation = document.getElementById('pickup-location').value;
+    const destination = document.getElementById('destination').value;
+    const vehicleType = document.getElementById('vehicle-type');
+    const fareEstimateDiv = document.getElementById('fare-estimate');
+    
+    // Check if we have enough information
+    if (!pickupLocation || !destination || !vehicleType.value || !fareEstimateDiv) {
+        return;
+    }
+    
+    // Get selected package information
+    const selectedOption = vehicleType.options[vehicleType.selectedIndex];
+    if (!selectedOption.dataset.packageType) {
+        return;
+    }
+    
+    const packageType = selectedOption.dataset.packageType;
+    const basePrice = parseFloat(selectedOption.dataset.basePrice);
+    const perKmRate = parseFloat(selectedOption.dataset.perKm);
+    const includedKm = parseInt(selectedOption.dataset.includedKm);
+    const waitingCharge = parseFloat(selectedOption.dataset.waitingCharge);
+    const categoryName = selectedOption.dataset.categoryName;
+    
+    // Calculate estimated distance between locations
+    const estimatedDistance = calculateSimulatedDistance(pickupLocation, destination);
+    
+    // Calculate estimated waiting time (in minutes)
+    const estimatedWaitingTime = Math.floor(Math.random() * 30); // 0-30 minutes
+    
+    // Calculate estimated fare based on package type
+    let estimatedFare = 0;
+    let fareDetails = '';
+    
+    if (packageType === 'Day') {
+        estimatedFare = basePrice;
+        
+        // Add extra distance charge if applicable
+        const extraKm = Math.max(0, estimatedDistance - includedKm);
+        const extraDistanceCharge = extraKm * perKmRate;
+        
+        // Add waiting charge if applicable
+        const extraWaitingCharge = estimatedWaitingTime > 0 ? 
+            (estimatedWaitingTime / 60) * waitingCharge : 0;
+        
+        // Total fare with extras
+        const totalWithExtras = estimatedFare + extraDistanceCharge + extraWaitingCharge;
+        
+        fareDetails = `
+            <p class="fare-detail"><strong>Base package price:</strong> LKR ${basePrice.toFixed(2)}</p>
+            <p class="fare-detail"><strong>Category:</strong> ${categoryName}</p>
+            <p class="fare-detail"><strong>Package type:</strong> ${packageType}</p>
+            <p class="fare-detail"><strong>Estimated distance:</strong> ${estimatedDistance.toFixed(1)} km</p>
+            <p class="fare-detail"><strong>Included kilometers:</strong> ${includedKm} km</p>
+            
+            ${extraKm > 0 ? `
+            <p class="fare-detail"><strong>Extra distance:</strong> ${extraKm.toFixed(1)} km × LKR ${perKmRate.toFixed(2)} = LKR ${extraDistanceCharge.toFixed(2)}</p>
+            ` : ''}
+            
+            ${estimatedWaitingTime > 0 ? `
+            <p class="fare-detail"><strong>Estimated waiting:</strong> ${estimatedWaitingTime} min (LKR ${extraWaitingCharge.toFixed(2)})</p>
+            ` : ''}
+            
+            ${(extraKm > 0 || estimatedWaitingTime > 0) ? `
+            <div class="fare-total">
+                <p><strong>Total estimated fare:</strong> LKR ${totalWithExtras.toFixed(2)}</p>
+            </div>
+            ` : ''}
+            
+            <p class="fare-note">Note: Final fare may vary based on actual distance traveled and waiting time.</p>
+        `;
+        
+        // Set final estimated fare
+        estimatedFare = totalWithExtras;
+    } else if (packageType === 'Kilometer') {
+        // Calculate kilometer-based fare
+        const distanceCharge = estimatedDistance * perKmRate;
+        
+        // Add waiting charge if applicable
+        const extraWaitingCharge = estimatedWaitingTime > 0 ? 
+            (estimatedWaitingTime / 60) * waitingCharge : 0;
+        
+        // Total fare
+        const totalFare = distanceCharge + extraWaitingCharge;
+        
+        fareDetails = `
+            <p class="fare-detail"><strong>Category:</strong> ${categoryName}</p>
+            <p class="fare-detail"><strong>Package type:</strong> ${packageType}</p>
+            <p class="fare-detail"><strong>Estimated distance:</strong> ${estimatedDistance.toFixed(1)} km</p>
+            <p class="fare-detail"><strong>Rate per km:</strong> LKR ${perKmRate.toFixed(2)}</p>
+            <p class="fare-detail"><strong>Distance charge:</strong> ${estimatedDistance.toFixed(1)} km × LKR ${perKmRate.toFixed(2)} = LKR ${distanceCharge.toFixed(2)}</p>
+            
+            ${estimatedWaitingTime > 0 ? `
+            <p class="fare-detail"><strong>Estimated waiting:</strong> ${estimatedWaitingTime} min (LKR ${extraWaitingCharge.toFixed(2)})</p>
+            ` : ''}
+            
+            <div class="fare-total">
+                <p><strong>Total estimated fare:</strong> LKR ${totalFare.toFixed(2)}</p>
+            </div>
+            
+            <p class="fare-note">Note: Final fare may vary based on actual distance traveled and waiting time.</p>
+        `;
+        
+        // Set final estimated fare
+        estimatedFare = totalFare;
+    }
+    
+    // Update the fare estimate display
+    fareEstimateDiv.innerHTML = `
+        <h3>Fare Estimate</h3>
+        <div class="fare-amount">LKR ${estimatedFare.toFixed(2)}</div>
+        <div class="fare-details">
+            ${fareDetails}
+        </div>
+    `;
+    
+    // Store the estimated fare and distance for later use in booking
+    const form = document.getElementById('booking-form');
+    if (form) {
+        form.dataset.estimatedFare = estimatedFare.toFixed(2);
+        form.dataset.estimatedDistance = estimatedDistance.toFixed(1);
+        form.dataset.estimatedWaitingTime = estimatedWaitingTime;
+    }
+}
+
+/**
+ * Calculate a simulated distance between two locations
+ */
+function calculateSimulatedDistance(origin, destination) {
+    // Use the length of the addresses to create a somewhat realistic distance
+    const originLength = origin.length;
+    const destLength = destination.length;
+    
+    // Base distance between 5-15 km
+    const baseDistance = 5 + (Math.random() * 10);
+    
+    // Add some variation based on the address lengths
+    const variation = ((originLength + destLength) % 10) / 2;
+    
+    return baseDistance + variation;
+}
+
+/**
+ * Validate user session
+ * @returns {boolean} true if session is valid, false otherwise
+ */
+function validateUserSession() {
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) {
+        console.error('No user session found, redirecting to login page');
+        window.location.href = '../login.jsp';
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Submit the booking to the API
  */
 function submitBooking() {
-    // Get form data
+    // Get form values
+    const pickupLocation = document.getElementById('pickup-location').value;
+    const destination = document.getElementById('destination').value;
+    const pickupDate = document.getElementById('pickup-date').value;
+    const pickupTime = document.getElementById('pickup-time').value;
+    const packageId = document.getElementById('vehicle-type').value;
+    const passengers = document.getElementById('passengers').value || 1;
+    const notes = document.getElementById('notes') ? document.getElementById('notes').value : '';
+    
+    // Debug the package selection
+    const packageSelect = document.getElementById('vehicle-type');
+    const selectedPackage = packageSelect.options[packageSelect.selectedIndex];
+    console.log('Selected package:', {
+        id: packageSelect.value,
+        idType: typeof packageSelect.value,
+        name: selectedPackage.textContent,
+        packageType: selectedPackage.dataset.packageType,
+        basePrice: selectedPackage.dataset.basePrice
+    });
+    
+    // Get the user ID from session
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) {
+        alert('Session expired. Please log in again.');
+        window.location.href = '../login.jsp';
+        return;
+    }
+    
+    // Get estimated fare and distance from the form data
+    const form = document.getElementById('booking-form');
+    const estimatedFare = form && form.dataset.estimatedFare ? parseFloat(form.dataset.estimatedFare) : 0;
+    const estimatedDistance = form && form.dataset.estimatedDistance ? parseFloat(form.dataset.estimatedDistance) : 0;
+    
+    // Format datetime exactly as expected by server (yyyy-MM-dd HH:mm)
+    const pickup_datetime = `${pickupDate} ${pickupTime}`;
+    
+    // Create booking object that matches exactly what the server expects
     const bookingData = {
-        user_id: parseInt(userId),
-        package_id: selectedPackage.package_id,
-        car_id: selectedCar.id,
-        pickup_location: document.getElementById('pickupLocation').value,
-        destination: document.getElementById('destination').value,
-        pickup_datetime: `${document.getElementById('pickupDate').value} ${document.getElementById('pickupTime').value}`,
-        num_passengers: parseInt(document.getElementById('passengers').value),
-        notes: document.getElementById('notes').value,
-        status: 'Pending' // Initial status
+        user_id: parseInt(userId, 10),
+        package_id: parseInt(packageId, 10),
+        car_id: null,  // Let server assign car
+        pickup_location: pickupLocation,
+        destination: destination,
+        pickup_datetime: pickup_datetime,
+        num_passengers: parseInt(passengers, 10),
+        notes: notes,
+        status: "Pending",
+        price: estimatedFare,
+        distance: estimatedDistance
     };
     
-    // Show loading state
-    const confirmBtn = document.getElementById('confirmBookingBtn');
-    const originalBtnText = confirmBtn.innerHTML;
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    console.log('Submitting booking data:', bookingData);
     
-    // Send booking request to API
-    fetch(BOOKINGS_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(bookingData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to create booking');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Show success screen
-        showBookingSuccess(data.booking_id);
-    })
-    .catch(error => {
-        console.error('Error creating booking:', error);
-        alert(`Error: ${error.message}`);
+    // Change button state to loading
+    const button = document.querySelector('button[type="submit"]');
+    if (button) {
+        const originalButtonText = button.innerHTML;
+        button.innerHTML = 'Processing...';
+        button.disabled = true;
         
-        // Reset button
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = originalBtnText;
+        // Reset button after 10 seconds no matter what (failsafe)
+        setTimeout(() => {
+            button.innerHTML = originalButtonText;
+            button.disabled = false;
+        }, 10000);
+    }
+    
+    // Try XHR method instead of fetch
+    submitBookingWithXHR(bookingData, button);
+}
+
+/**
+ * Submit booking using XMLHttpRequest
+ */
+function submitBookingWithXHR(bookingData, button) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://localhost:8080/mccAPI/api/bookings/create', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Accept', 'application/json');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            console.log('XHR response status:', xhr.status);
+            console.log('XHR response text:', xhr.responseText);
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // Success
+                showSuccess('Booking created successfully!');
+                
+                // Try to parse response
+                let responseData;
+                try {
+                    responseData = JSON.parse(xhr.responseText);
+                    console.log('Booking response data:', responseData);
+                    
+                    // If we have booking data, show confirmation
+                    if (responseData && responseData.booking_id) {
+                        showBookingConfirmation(responseData);
+                    }
+                } catch (e) {
+                    console.warn('Could not parse response as JSON:', e);
+                }
+                
+                // Reset form
+                const form = document.getElementById('booking-form');
+                if (form) form.reset();
+                setDefaultDateTime();
+                
+                // Redirect after a delay
+                setTimeout(() => {
+                    window.location.href = 'bookingHistory.jsp';
+                }, 3000);
+            } else {
+                // Error
+                let errorMessage = 'Failed to create booking';
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // Not JSON or parse error
+                    if (xhr.responseText) {
+                        errorMessage = xhr.responseText;
+                    }
+                }
+                showError(errorMessage);
+                
+                // If it's a 400 error, log more details
+                if (xhr.status === 400) {
+                    console.error('Server validation error. Request data:', bookingData);
+                }
+            }
+            
+            // Reset button
+            if (button) {
+                button.innerHTML = 'Book Now';
+                button.disabled = false;
+            }
+        }
+    };
+    
+    // Handle network errors
+    xhr.onerror = function() {
+        console.error('Network error occurred');
+        showError('Network error. Please check your connection and try again.');
+        
+        if (button) {
+            button.innerHTML = 'Book Now';
+            button.disabled = false;
+        }
+    };
+    
+    // Send the request
+    xhr.send(JSON.stringify(bookingData));
+}
+
+/**
+ * Show booking confirmation notification
+ */
+function showBookingConfirmation(bookingData) {
+    // Create confirmation modal if it doesn't exist
+    if (!document.getElementById('booking-confirmation')) {
+        const modal = document.createElement('div');
+        modal.id = 'booking-confirmation';
+        modal.className = 'booking-confirmation-modal';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-check-circle"></i> Booking Submitted</h3>
+                </div>
+                <div class="modal-body" id="confirmation-details">
+                    <!-- Details will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <p>Redirecting to booking history in <span id="countdown">5</span> seconds...</p>
+                    <button class="btn-primary" onclick="window.location.href='bookingHistory.jsp'">
+                        View My Bookings
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    // Parse date and time from booking data
+    let formattedDate = "Not available";
+    let formattedTime = "Not available";
+    
+    try {
+        // Try to format date and time if available
+        if (bookingData.pickup_datetime) {
+            const pickupDate = new Date(bookingData.pickup_datetime);
+            formattedDate = pickupDate.toLocaleDateString(undefined, { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            formattedTime = pickupDate.toLocaleTimeString(undefined, { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+    } catch (e) {
+        console.warn('Error formatting date:', e);
+    }
+    
+    // Populate confirmation details
+    const confirmationDetails = document.getElementById('confirmation-details');
+    if (confirmationDetails) {
+        confirmationDetails.innerHTML = `
+            <div class="confirmation-info">
+                <p class="booking-id">Booking Reference: <strong>#${bookingData.booking_id}</strong></p>
+                <p class="booking-status">Status: <span class="status-badge pending">Pending</span></p>
+                
+                <div class="booking-details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-map-marker-alt"></i> Pickup:</span>
+                        <span class="detail-value">${bookingData.pickup_location}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-flag-checkered"></i> Destination:</span>
+                        <span class="detail-value">${bookingData.destination}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-calendar-alt"></i> Date:</span>
+                        <span class="detail-value">${formattedDate}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-clock"></i> Time:</span>
+                        <span class="detail-value">${formattedTime}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-money-bill-wave"></i> Estimated Fare:</span>
+                        <span class="detail-value">LKR ${bookingData.price ? bookingData.price.toFixed(2) : "N/A"}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-users"></i> Passengers:</span>
+                        <span class="detail-value">${bookingData.num_passengers}</span>
+                    </div>
+                </div>
+                
+                <div class="confirmation-message">
+                    <p><i class="fas fa-info-circle"></i> A driver will be assigned to your booking shortly.</p>
+                    <p>You will receive updates about your booking status.</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show the modal
+    const modal = document.getElementById('booking-confirmation');
+    if (modal) {
+        modal.classList.add('show');
+        
+        // Start countdown
+        let countdown = 5;
+        const countdownElement = document.getElementById('countdown');
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdownElement) countdownElement.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    }
+}
+
+/**
+ * Show error message
+ */
+function showError(message) {
+    const errorElement = document.getElementById('error-message');
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.add('show');
+        
+        // Add shake animation if defined
+        if (typeof errorElement.classList.add === 'function') {
+            errorElement.classList.add('error-shake');
+            setTimeout(() => {
+                errorElement.classList.remove('error-shake');
+            }, 600);
+        }
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+            errorElement.classList.remove('show');
+        }, 5000);
+    } else {
+        // Fallback to alert if error element doesn't exist
+        console.error('Error:', message);
+        alert(message);
+    }
+}
+
+/**
+ * Show success message
+ */
+function showSuccess(message) {
+    const successElement = document.getElementById('success-message');
+    if (successElement) {
+        successElement.textContent = message;
+        successElement.classList.add('show');
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+            successElement.classList.remove('show');
+        }, 5000);
+    } else {
+        // Fallback to alert if success element doesn't exist
+        console.log('Success:', message);
+        alert(message);
+    }
+}
+
+/**
+ * Validate the booking form before submission
+ * @returns {boolean} True if form is valid, false otherwise
+ */
+function validateBookingForm() {
+    // Get form values
+    const pickupLocation = document.getElementById('pickup-location').value.trim();
+    const destination = document.getElementById('destination').value.trim();
+    const pickupDate = document.getElementById('pickup-date').value;
+    const pickupTime = document.getElementById('pickup-time').value;
+    const packageId = document.getElementById('vehicle-type').value;
+    
+    // Check required fields
+    if (!pickupLocation) {
+        showError('Please enter a pickup location');
+        highlightField('pickup-location');
+        return false;
+    }
+    
+    if (!destination) {
+        showError('Please enter a destination');
+        highlightField('destination');
+        return false;
+    }
+    
+    if (!pickupDate) {
+        showError('Please select a pickup date');
+        highlightField('pickup-date');
+        return false;
+    }
+    
+    if (!pickupTime) {
+        showError('Please select a pickup time');
+        highlightField('pickup-time');
+        return false;
+    }
+    
+    // Check if a package is selected
+    if (!packageId || packageId === "0" || packageId === "") {
+        showError('Please select a valid package');
+        highlightField('vehicle-type');
+        return false;
+    }
+    
+    // Validate date - must be today or future
+    const selectedDate = new Date(pickupDate);
+    selectedDate.setHours(0, 0, 0, 0); // Reset time component
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time component
+    
+    if (selectedDate < today) {
+        showError('Pickup date cannot be in the past');
+        highlightField('pickup-date');
+        return false;
+    }
+    
+    // If date is today, validate time - must be at least 1 hour from now
+    if (selectedDate.getTime() === today.getTime()) {
+        const now = new Date();
+        const selectedDateTime = new Date(pickupDate + 'T' + pickupTime);
+        
+        // Add 1 hour to current time for minimum booking time
+        const minTime = new Date(now.getTime() + 60 * 60 * 1000);
+        
+        if (selectedDateTime < minTime) {
+            showError('Pickup time must be at least 1 hour from now');
+            highlightField('pickup-time');
+            return false;
+        }
+    }
+    
+    // Check reasonable distance
+    if (pickupLocation === destination) {
+        showError('Pickup location and destination cannot be the same');
+        highlightField('pickup-location');
+        highlightField('destination');
+        return false;
+    }
+    
+    // All validations passed
+    return true;
+}
+
+/**
+ * Highlight a field with error styling
+ * @param {string} fieldId - ID of the field to highlight
+ */
+function highlightField(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    
+    // Add error class
+    field.classList.add('field-error');
+    
+    // Remove error class after user interacts with field
+    field.addEventListener('input', function onInput() {
+        field.classList.remove('field-error');
+        field.removeEventListener('input', onInput);
     });
 }
 
 /**
- * Show booking success screen
- * @param {string} bookingId - Booking reference ID
+ * Add CSS for field validation
  */
-function showBookingSuccess(bookingId) {
-    // Hide the booking steps and progress
-    document.querySelector('.booking-progress').style.display = 'none';
-    document.querySelectorAll('.booking-step').forEach(step => {
-        step.classList.remove('active');
-    });
+function addValidationStyles() {
+    // Check if styles already exist
+    if (document.getElementById('booking-validation-styles')) {
+        return;
+    }
     
-    // Show success message
-    const successHtml = `
-        <div class="booking-success">
-            <div class="success-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h2>Booking Confirmed!</h2>
-            <p>Your booking has been successfully created.</p>
-            <div class="booking-reference">
-                Booking Reference: ${bookingId}
-            </div>
-            <p>A confirmation email has been sent to your registered email address.</p>
-            <p>You can view your booking details in your account dashboard.</p>
-            <div style="margin-top: 2rem;">
-                <a href="customerDashboard.jsp" class="btn btn-primary">
-                    <i class="fas fa-home"></i> Go to Dashboard
-                </a>
-            </div>
-        </div>
+    const style = document.createElement('style');
+    style.id = 'booking-validation-styles';
+    style.textContent = `
+        .field-error {
+            border-color: #f44336 !important;
+            box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2) !important;
+        }
+        
+        .field-error:focus {
+            border-color: #f44336 !important;
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.3) !important;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .error-shake {
+            animation: shake 0.6s ease-in-out;
+        }
+        
+        #error-message {
+            display: none;
+            background-color: #ffebee;
+            color: #d32f2f;
+            padding: 10px 15px;
+            border-left: 4px solid #f44336;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        #error-message.show {
+            display: block;
+        }
+        
+        #success-message {
+            display: none;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px 15px;
+            border-left: 4px solid #4caf50;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        #success-message.show {
+            display: block;
+        }
+        
+        .booking-confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .booking-confirmation-modal.show {
+            display: flex;
+        }
+        
+        .booking-confirmation-modal .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .booking-confirmation-modal .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #f5f5f5;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        .booking-confirmation-modal .modal-body {
+            padding: 20px;
+        }
+        
+        .booking-confirmation-modal .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: right;
+            background-color: #f5f5f5;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        
+        .fare-detail {
+            margin: 5px 0;
+        }
+        
+        .fare-total {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+            font-weight: bold;
+        }
+        
+        .fare-note {
+            font-size: 0.9em;
+            color: #757575;
+            margin-top: 10px;
+        }
+        
+        .fare-amount {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2e7d32;
+            margin: 10px 0;
+        }
     `;
-    
-    const bookingContainer = document.querySelector('.booking-container');
-    bookingContainer.innerHTML = successHtml;
+    document.head.appendChild(style);
 }

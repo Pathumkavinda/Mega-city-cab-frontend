@@ -1247,3 +1247,7 @@ function handleLogout() {
     window.location.href = '../index.jsp';
 }
 
+function logout() {
+    sessionStorage.clear();
+    window.location.href = '../login.jsp';
+}

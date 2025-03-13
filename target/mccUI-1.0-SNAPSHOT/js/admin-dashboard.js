@@ -1267,3 +1267,7 @@ window.adminDashboard = {
         window.location.reload();
     }
 };
+function logout() {
+    sessionStorage.clear();
+    window.location.href = '../login.jsp';
+}

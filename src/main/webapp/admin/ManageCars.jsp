@@ -212,6 +212,7 @@
             </div>
         </div>
     </div>
+    
 
     <script src="${pageContext.request.contextPath}/js/admin-dashboard.js"></script>
     <script src="${pageContext.request.contextPath}/js/manage-cars.js"></script>

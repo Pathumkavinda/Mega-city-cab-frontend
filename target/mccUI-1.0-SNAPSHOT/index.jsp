@@ -1,10 +1,10 @@
 <%-- 
     Document   : index
-    Created on : Mar 8, 2025, 12:30:56 PM
+    Created on : Mar 12, 2025, 12:35:00 PM
     Author     : Admin
 --%>
 
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -22,9 +22,9 @@
             <nav>
                 <ul>
                     <li><a href="index.jsp" class="active">Home</a></li>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Services</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="about.jsp">About</a></li>
+                    <li><a href="help.jsp">Help</a></li>
+                    <li><a href="contactus.jsp">Contact</a></li>
                     <li><a href="login.jsp" class="login-btn">Login</a></li>
                 </ul>
             </nav>

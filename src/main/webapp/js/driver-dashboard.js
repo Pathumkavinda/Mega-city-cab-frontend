@@ -331,3 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '../login.jsp';
     }
 });
+function logout() {
+    sessionStorage.clear();
+    window.location.href = '../login.jsp';
+}

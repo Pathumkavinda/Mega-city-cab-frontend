@@ -1,0 +1,208 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/Other/CascadeStyleSheet.css to edit this template
+*/
+/* 
+    Created on : Mar 13, 2025, 5:16:38 PM
+    Author     : Admin
+*/
+/* Authentication Pages Styles (Login, Register, Forgot Password) */
+
+.auth-container {
+    max-width: 100%;
+    min-height: calc(100vh - 200px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background-color: #f8f9fa;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 600px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.auth-header {
+    background-color: #0056b3;
+    color: #fff;
+    padding: 30px;
+    text-align: center;
+}
+
+.auth-header h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.auth-header p {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+.auth-steps {
+    padding: 30px;
+}
+
+.step {
+    display: none;
+}
+
+.step.active {
+    display: block;
+}
+
+.step h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    border-color: #0056b3;
+    outline: none;
+}
+
+.password-strength {
+    margin-top: 8px;
+}
+
+.strength-meter {
+    height: 4px;
+    background-color: #eee;
+    border-radius: 2px;
+    margin-bottom: 5px;
+}
+
+.strength-text {
+    font-size: 0.8rem;
+    color: #777;
+}
+
+.code-inputs {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.code-input {
+    width: 50px;
+    height: 60px;
+    text-align: center;
+    font-size: 1.5rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    margin-right: 10px;
+}
+
+.code-input:last-child {
+    margin-right: 0;
+}
+
+.code-input:focus {
+    border-color: #0056b3;
+    outline: none;
+}
+
+.auth-btn {
+    width: 100%;
+    background-color: #0056b3;
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+}
+
+.auth-btn:hover {
+    background-color: #004494;
+}
+
+.resend-code {
+    font-size: 0.9rem;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.resend-code a {
+    color: #0056b3;
+    text-decoration: none;
+}
+
+.success-message {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+.success-message h2 {
+    color: #28a745;
+    margin-bottom: 15px;
+}
+
+.success-message p {
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.auth-footer {
+    border-top: 1px solid #eee;
+    padding: 20px 30px;
+    text-align: center;
+}
+
+.auth-footer p {
+    color: #666;
+}
+
+.auth-footer a {
+    color: #0056b3;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Media Queries */
+@media (max-width: 500px) {
+    .code-input {
+        width: 40px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
