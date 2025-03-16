@@ -1,0 +1,231 @@
+/* 
+    MegaCity Cabs - Customer Profile Stylesheet
+    Designed to match the main website style
+*/
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+/* Header styles */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #3a86ff;
+}
+
+nav ul {
+    display: flex;
+    gap: 2rem;
+}
+
+nav ul li a {
+    font-weight: 500;
+    padding: 0.5rem 0;
+    transition: color 0.3s;
+}
+
+nav ul li a:hover {
+    color: #3a86ff;
+}
+
+a.active {
+    color: #3a86ff;
+    border-bottom: 2px solid #3a86ff;
+}
+
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.menu-toggle span {
+    height: 3px;
+    width: 25px;
+    background-color: #333;
+    margin: 2px 0;
+    transition: all 0.3s;
+}
+
+/* Main content styles */
+main {
+    padding: 2rem 5%;
+    min-height: calc(100vh - 140px);
+}
+
+/* Profile container */
+.profile-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Profile section */
+.profile-section {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.profile-section h2 {
+    color: #3a86ff;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    text-align: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Form styling */
+form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+}
+
+label {
+    font-weight: 600;
+    color: #495057;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus {
+    border-color: #3a86ff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.25);
+}
+
+input:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+/* Button styling */
+.update-btn {
+    background: linear-gradient(135deg, #3a86ff 0%, #5e60ce 100%);
+    color: white;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.update-btn:hover {
+    background: linear-gradient(135deg, #2667cc 0%, #4e50be 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer styles */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1.5rem 0;
+    width: 100%;
+}
+
+/* Responsive styles */
+@media screen and (min-width: 768px) {
+    form {
+        grid-template-columns: 1fr 1fr;
+        column-gap: 2rem;
+    }
+    
+    form button, form .full-width {
+        grid-column: span 2;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    header {
+        flex-wrap: wrap;
+    }
+    
+    nav {
+        width: 100%;
+        display: none;
+    }
+    
+    nav.active {
+        display: block;
+    }
+    
+    nav ul {
+        flex-direction: column;
+        text-align: center;
+        padding: 1rem 0;
+    }
+    
+    nav ul li {
+        margin: 0.5rem 0;
+    }
+    
+    .menu-toggle {
+        display: flex;
+    }
+    
+    .profile-section {
+        padding: 1.5rem;
+    }
+}
+
+/* Loader */
+.loading {
+    text-align: center;
+    padding: 2rem;
+}
+
+.loading i {
+    color: #3a86ff;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
