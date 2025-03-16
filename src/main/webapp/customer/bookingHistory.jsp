@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Booking History - MegaCity Cabs</title>
+    <title>My Booking History - MEGA CITY CAB</title>
     <link rel="stylesheet" href="../css/bookingHistory.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="../js/customer.js"></script>
@@ -13,7 +13,7 @@
 <body>
     <header>
         <div class="logo">
-            <h1>MegaCity Cabs</h1>
+            <h1>MEGA CITY CAB</h1>
         </div>
         <nav>
             <ul>
@@ -93,7 +93,7 @@
     </div>
 
     <footer>
-        <p>&copy; 2025 MegaCity Cabs. All rights reserved.</p>
+        <p>&copy; 2025 MEGA CITY CAB. All rights reserved.</p>
     </footer>
 
     <script>

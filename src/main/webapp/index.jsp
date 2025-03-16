@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>MegaCity Cabs - Book Your Ride</title>
+        <title>Mega City Cabs - Book Your Ride</title>
         <link rel="stylesheet" href="css/index.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <script defer src="js/index.js"></script>
@@ -13,14 +13,14 @@
     <body>
         <header>
             <div class="logo">
-                <h1>MegaCity Cabs</h1>
+                <h1>MEGA CITY CAB</h1>
             </div>
             <nav>
                 <ul>
                     <li><a href="index.jsp" class="active">Home</a></li>
-                    <li><a href="booking.jsp">Book a Cab</a></li>
-                    <li><a href="services.jsp">Services</a></li>
-                    <li><a href="contact.jsp">Contact Us</a></li>
+                    <li><a href="login.jsp">Book a Cab</a></li>
+                    <li><a href="help.jsp">Help</a></li>
+                    <li><a href="contactus.jsp">Contact Us</a></li>
                     <li><a href="login.jsp">Login</a></li>
                 </ul>
             </nav>
@@ -34,10 +34,11 @@
         <main>
             <section class="hero">
                 <div class="hero-content">
-                    <h2>Fast and Reliable Cab Service</h2>
-                    <p>Your trusted transportation partner. Book a cab in just a few clicks!</p>
+                    <h2>Welcome to MEGA CITY CAB</h2>
+                    <p>Your trusted transportation partner in Colombo.</p>
                     <div class="cta-buttons">
-                        <button onclick="bookNow()">Book Now</button>
+                        <a href="login.jsp" class="cta-buttons"> <button onclick="bookNow()">Book Now</button></a>
+                       
                         <a href="register.jsp" class="cta-button secondary">Register</a>
                     </div>
                 </div>
@@ -70,7 +71,7 @@
         </main>
         
         <footer>
-            <p>&copy; 2025 MegaCity Cabs. All rights reserved.</p>
+            <p>&copy; 2025 MEGA CITY CAB. All rights reserved.</p>
         </footer>
     </body>
 </html>

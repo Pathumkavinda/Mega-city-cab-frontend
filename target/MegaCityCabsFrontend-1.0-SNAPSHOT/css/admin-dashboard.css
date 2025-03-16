@@ -273,3 +273,188 @@ body {
         width: 100%;
     }
 }
+/* Admin Dashboard Action Buttons */
+
+/* Common Button Styles */
+.action-button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+.action-button i {
+    margin-right: 6px;
+    font-size: 16px;
+}
+
+/* Add Button */
+.add-button {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.add-button:hover {
+    background-color: #09a15c;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+/* Edit Button */
+.edit-button {
+    background-color: var(--light-blue);
+    color: white;
+}
+
+.edit-button:hover {
+    background-color: var(--dark-blue);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+/* Delete Button */
+.delete-button {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.delete-button:hover {
+    background-color: #ff3c3c;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+/* Ghost Button Variants */
+.action-button.ghost {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.add-button.ghost {
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.add-button.ghost:hover {
+    background-color: rgba(11, 185, 102, 0.1);
+}
+
+.edit-button.ghost {
+    color: var(--light-blue);
+    border: 1px solid var(--light-blue);
+}
+
+.edit-button.ghost:hover {
+    background-color: rgba(58, 123, 213, 0.1);
+}
+
+.delete-button.ghost {
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.delete-button.ghost:hover {
+    background-color: rgba(255, 92, 92, 0.1);
+}
+
+/* Small Button Variant */
+.action-button.small {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.action-button.small i {
+    font-size: 14px;
+    margin-right: 4px;
+}
+
+/* Table Action Buttons */
+.table-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.table-actions .action-button {
+    padding: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+}
+
+.table-actions .action-button i {
+    margin-right: 0;
+}
+
+/* Button with icon only */
+.action-button.icon-only {
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    padding: 0;
+}
+
+.action-button.icon-only i {
+    margin-right: 0;
+}
+
+/* Disabled state */
+.action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Float action button (for fixed position add buttons) */
+.float-action-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--success-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 99;
+}
+
+.float-action-button i {
+    font-size: 24px;
+}
+
+.float-action-button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .action-button {
+        padding: 6px 12px;
+    }
+    
+    .float-action-button {
+        width: 48px;
+        height: 48px;
+        bottom: 20px;
+        right: 20px;
+    }
+    
+    .table-actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

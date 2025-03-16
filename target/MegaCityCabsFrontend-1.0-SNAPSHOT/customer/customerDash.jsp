@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard - MegaCity Cabs</title>
+    <title>Customer Dashboard - MEGA CITY CAB</title>
     <link rel="stylesheet" href="../css/customerDash.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
 <script defer src="../js/customer.js"></script>

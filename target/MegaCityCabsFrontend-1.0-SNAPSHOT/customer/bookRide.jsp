@@ -9,11 +9,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="../js/customer.js"></script>
     <link rel="icon" type="image/x-icon" href="../images/favicon.svg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <header>
         <div class="logo">
-            <h1>MegaCity Cabs</h1>
+            <h1>MEGA CITY CAB</h1>
         </div>
         <nav>
             <ul>

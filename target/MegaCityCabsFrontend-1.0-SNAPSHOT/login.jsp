@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - MegaCity Cabs</title>
+    <title>Login - Mega City Cabs</title>
     <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="js/login.js"></script>
@@ -13,15 +13,14 @@
 <body>
     <header>
         <div class="logo">
-            <h1>MegaCity Cabs</h1>
+            <h1>MEGA CITY CAB</h1>
         </div>
         <nav>
             <ul>
                 <li><a href="index.jsp">Home</a></li>
-                <li><a href="booking.jsp">Book a Cab</a></li>
-                <li><a href="services.jsp">Services</a></li>
+                <li><a href="help.jsp">Help</a></li>
                 <li><a href="contact.jsp">Contact Us</a></li>
-                <li><a href="login.jsp" class="active">Login</a></li>
+                <li><a href="register.jsp" class="active">Register</a></li>
             </ul>
         </nav>
         <div class="menu-toggle">
@@ -51,7 +50,7 @@
     </main>
     
     <footer>
-        <p>&copy; 2025 MegaCity Cabs. All rights reserved.</p>
+        <p>&copy; 2025 MEGA CITY CAB. All rights reserved.</p>
     </footer>
     
     <script>

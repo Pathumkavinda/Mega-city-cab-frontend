@@ -572,7 +572,7 @@ function showBookingSummary() {
         }
 
         // ✅ Ensure End Date is after Start Date
-        if (new Date(startDate) >= new Date(endDate)) {
+        if (new Date(startDate) > new Date(endDate)) {
             alert("⚠️ End Date must be greater than Start Date.");
             return;
         }
@@ -620,7 +620,124 @@ function showBookingSummary() {
 }
 
 
-// ✅ Confirm Booking & Submit to API
+// ==== Add jsPDF library reference to your HTML file ====
+// Add this to your HTML head section
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+// ✅ Generate and download PDF of booking summary
+function generateBookingPDF(bookingData, vehicleCategory) {
+    // Create new jsPDF instance
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add logo/header
+    doc.setFontSize(22);
+    doc.setTextColor(0, 51, 102);
+    doc.text("MegaCity Cabs", 105, 20, { align: "center" });
+    
+    // Add booking confirmation title
+    doc.setFontSize(16);
+    doc.setTextColor(0, 102, 0);
+    doc.text("Booking Confirmation", 105, 30, { align: "center" });
+    
+    // Add booking reference number and date
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Booking ID: ${bookingData.id || "Pending"}`, 20, 45);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 50);
+    
+    // Customer details
+    doc.setFontSize(12);
+    doc.setTextColor(0, 51, 102);
+    doc.text("Customer Details", 20, 60);
+    
+    // Customer info table
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const customerInfo = [
+        ["Customer ID", bookingData.userId],
+        ["Pickup Location", bookingData.pickupLocation],
+        ["Destination", bookingData.destination],
+        ["Pickup Time", formatTime(bookingData.pickupTime)],
+        ["Start Date", formatDate(bookingData.startDate)],
+        ["End Date", formatDate(bookingData.endDate)],
+    ];
+    
+    doc.autoTable({
+        startY: 65,
+        head: [],
+        body: customerInfo,
+        theme: 'striped',
+        headStyles: { fillColor: [0, 51, 102] },
+        styles: { overflow: 'linebreak', cellWidth: 'auto' },
+        columnStyles: {
+            0: { cellWidth: 50, fontStyle: 'bold' },
+            1: { cellWidth: 80 }
+        }
+    });
+    
+    // Ride details
+    doc.setFontSize(12);
+    doc.setTextColor(0, 51, 102);
+    doc.text("Ride Details", 20, doc.previousAutoTable.finalY + 10);
+    
+    // Ride info table
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const rideInfo = [
+        ["Vehicle Category", vehicleCategory.catName],
+        ["Driver ID", bookingData.driverId],
+        ["Final Price", `Rs ${bookingData.finalPrice.toFixed(2)}`],
+        ["Status", bookingData.stat]
+    ];
+    
+    doc.autoTable({
+        startY: doc.previousAutoTable.finalY + 15,
+        head: [],
+        body: rideInfo,
+        theme: 'striped',
+        headStyles: { fillColor: [0, 51, 102] },
+        styles: { overflow: 'linebreak', cellWidth: 'auto' },
+        columnStyles: {
+            0: { cellWidth: 50, fontStyle: 'bold' },
+            1: { cellWidth: 80 }
+        }
+    });
+    
+    // Terms and conditions
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Terms and Conditions:", 20, doc.previousAutoTable.finalY + 15);
+    doc.setFontSize(8);
+    const terms = [
+        "1. Cancellations within 24 hours of pickup time will incur a 50% charge.",
+        "2. Driver will wait up to 15 minutes at the pickup location.",
+        "3. Additional charges apply for excess kilometers.",
+        "4. A valid ID is required at pickup."
+    ];
+    
+    let yPos = doc.previousAutoTable.finalY + 20;
+    terms.forEach(term => {
+        doc.text(term, 20, yPos);
+        yPos += 5;
+    });
+    
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(0, 51, 102);
+    doc.text("Thank you for choosing MegaCity Cabs!", 105, yPos + 10, { align: "center" });
+    doc.text("For support, contact us at support@megacitycabs.com", 105, yPos + 15, { align: "center" });
+    
+    // Generate the PDF
+    const bookingDate = new Date(bookingData.startDate).toISOString().slice(0,10);
+    const filename = `MegaCityCabs_Booking_${bookingDate}.pdf`;
+    doc.save(filename);
+    
+    return filename;
+}
+
+// ✅ Modify confirmBooking function to include PDF generation
 async function confirmBooking() {
     try {
         const selectedCategory = JSON.parse(sessionStorage.getItem("selectedCategory"));
@@ -679,13 +796,50 @@ async function confirmBooking() {
         });
 
         if (!response.ok) throw new Error("Booking failed");
+        
+        const bookingResult = await response.json();
+        
+        // Update booking data with ID from response if available
+        if (bookingResult.id) {
+            bookingData.id = bookingResult.id;
+        }
+        
+        // ✅ Generate and download PDF
+        generateBookingPDF(bookingData, selectedCategory);
 
-        alert("🚖 Booking Confirmed!");
+        alert("🚖 Booking Confirmed! Your receipt has been downloaded.");
         window.location.href = "bookingHistory.jsp";
 
     } catch (error) {
         console.error("❌ Error:", error);
         alert("⚠️ An error occurred while processing your booking. Please try again.");
+    }
+}
+
+// ✅ Also create a function to download receipt for existing bookings
+async function downloadBookingReceipt(bookingId) {
+    try {
+        // Fetch booking details
+        const bookingResponse = await fetch(`${bookingApiUrl}/${bookingId}`);
+        if (!bookingResponse.ok) throw new Error("Failed to fetch booking details");
+        const bookingData = await bookingResponse.json();
+        
+        // Fetch vehicle details to get category
+        const vehicleResponse = await fetch(`${vehicleApiUrl}/${bookingData.vehicleId}`);
+        if (!vehicleResponse.ok) throw new Error("Failed to fetch vehicle details");
+        const vehicleData = await vehicleResponse.json();
+        
+        // Fetch category details
+        const categoryResponse = await fetch(`${categoryApiUrl}/${vehicleData.catId}`);
+        if (!categoryResponse.ok) throw new Error("Failed to fetch category details");
+        const categoryData = await categoryResponse.json();
+        
+        // Generate PDF
+        generateBookingPDF(bookingData, categoryData);
+        
+    } catch (error) {
+        console.error("❌ Error generating booking receipt:", error);
+        alert("⚠️ An error occurred while generating your receipt. Please try again.");
     }
 }
 
